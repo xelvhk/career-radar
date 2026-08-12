@@ -1,0 +1,87 @@
+# Implementation Plan: Career Radar
+
+## Architecture Decisions
+
+- Start with versioned files and deterministic validation; add persistence only
+  after real usage reveals query and privacy requirements.
+- Keep evidence as a first-class entity referenced by skills and matching output.
+- Treat model extraction as an untrusted adapter; deterministic scoring contracts
+  remain independent of any model provider.
+- Deliver vertical slices beginning with pasted vacancy text.
+
+## Phase 0: Evidence Foundation
+
+- [x] Define the product/data specification.
+- [x] Add conservative project, skill, goal, and evidence seed data.
+- [x] Add deterministic validation and repository contract tests.
+
+Acceptance: checked-in records validate locally and contain no invented proof.
+
+Verification: `python3 scripts/validate_data.py && python3 -m unittest discover -s tests -v`
+
+## Phase 1: Manual Vacancy Match MVP
+
+- [ ] Define a normalized vacancy contract and safe text-ingestion boundary.
+- [ ] Extract requirements from pasted text with a deterministic/manual fallback.
+- [ ] Calculate technical, domain, seniority, evidence, direction, location, and
+      salary dimensions separately.
+- [ ] Present requirement-to-evidence mapping, gaps, confidence, and an
+      `APPLY`/`REVIEW`/`SKIP` recommendation with explainable weights.
+
+Acceptance: one pasted vacancy produces a reproducible score breakdown and never
+promotes a pending evidence item as verified.
+
+## Phase 2: Vacancy Collection
+
+- [ ] Research source terms and official APIs before selecting integrations.
+- [ ] Add source adapters with rate limits, provenance, deduplication, and raw
+      payload retention rules.
+- [ ] Add scheduled ingestion and failure visibility.
+
+Acceptance: normalized vacancies retain source attribution and adapter failures do
+not corrupt prior data.
+
+## Phase 3: Application Preparation
+
+- [ ] Generate a requirement-to-evidence outline before prose.
+- [ ] Produce editable cover-letter and CV suggestions with citations.
+- [ ] Require human approval before export or sending.
+
+Acceptance: every generated claim links to verified evidence; no external send is
+automatic.
+
+## Phase 4: Application CRM
+
+- [ ] Track application stages, next actions, and outcome reasons.
+- [ ] Store private application data outside the public repository.
+- [ ] Report funnel conversion without exposing personal details.
+
+Acceptance: state changes persist locally and privacy boundaries are tested.
+
+## Phase 5: Market Intelligence
+
+- [ ] Aggregate recurring gaps across suitable vacancies.
+- [ ] Rank learning/project tasks by estimated opportunity impact and effort.
+- [ ] Track whether completed evidence changes match coverage over time.
+
+Acceptance: every recommendation shows sample size, time window, and affected
+vacancies rather than presenting model intuition as market fact.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Hallucinated experience | High | Verification states and claim-level constraints |
+| Biased or opaque scores | High | Separate dimensions, explicit weights, explanations |
+| Job-source restrictions | High | Official-source research before collectors |
+| Personal-data leakage | High | Local/private runtime store; sanitized public fixtures |
+| Premature infrastructure | Medium | Files first; database only after demonstrated need |
+| Stale market conclusions | Medium | Time windows, sample sizes, source provenance |
+
+## Checkpoints
+
+- Foundation: contracts and checked-in data pass local validation.
+- MVP: pasted vacancy flows end-to-end with no external dependency required.
+- Collection: one authorized source works reliably before adding another.
+- Applications: a human reviews all claims and actions before export.
+- Intelligence: recommendations are reproducible from stored observations.

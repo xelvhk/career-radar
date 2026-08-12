@@ -1,0 +1,33 @@
+schema_version: 1
+projects:
+  - id: contractops-ai
+    name: ContractOps AI
+    summary: Document-processing RAG project with hybrid retrieval, reranking, and evaluation.
+    visibility: unknown
+    repository_url: null
+    verification: pending
+    artifacts:
+      - path: EVALUATION.md
+        kind: documentation
+        verification: pending
+      - path: benchmark.py
+        kind: source_code
+        verification: pending
+      - path: evaluation/results.json
+        kind: evaluation_result
+        verification: pending
+
+  - id: onboardica
+    name: Onboardica
+    summary: null
+    visibility: unknown
+    repository_url: null
+    verification: pending
+    artifacts: []
+  - id: vasya-ai
+    name: Vasya AI
+    summary: null
+    visibility: unknown
+    repository_url: null
+    verification: pending
+    artifacts: []

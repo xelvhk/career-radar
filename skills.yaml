@@ -1,0 +1,103 @@
+schema_version: 1
+skills:
+  - id: python
+    name: Python
+    category: backend
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts: []
+
+  - id: rest-api
+    name: REST API
+    category: backend
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts: []
+
+  - id: postgresql
+    name: PostgreSQL
+    category: backend
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts: []
+
+  - id: docker
+    name: Docker
+    category: infrastructure
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts: []
+
+  - id: rag
+    name: Retrieval-Augmented Generation
+    category: ai_engineering
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts: []
+
+  - id: hybrid-search
+    name: Hybrid Search
+    category: ai_engineering
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts:
+          - benchmark.py
+
+  - id: qdrant
+    name: Qdrant
+    category: ai_engineering
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts: []
+
+  - id: reranking
+    name: Reranking
+    category: ai_engineering
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts:
+          - benchmark.py
+
+  - id: llm-evaluation
+    name: LLM and Retrieval Evaluation
+    category: ai_engineering
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        verification: pending
+        artifacts:
+          - EVALUATION.md
+          - evaluation/results.json
+
+  - id: kubernetes
+    name: Kubernetes
+    category: infrastructure
+    level: knowledge
+    evidence: []
+  - id: aws
+    name: AWS
+    category: infrastructure
+    level: knowledge
+    evidence: []
+
+  - id: observability
+    name: Observability
+    category: infrastructure
+    level: knowledge
+    evidence: []

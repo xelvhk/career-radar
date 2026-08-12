@@ -1,0 +1,39 @@
+schema_version: 1
+career_goals:
+  horizon_months: 12
+  target_roles:
+    - id: ai-backend-engineer
+      name: AI Backend Engineer
+      priority: high
+    - id: rag-engineer
+      name: RAG Engineer
+      priority: high
+    - id: forward-deployed-engineer
+      name: Forward Deployed Engineer
+      priority: high
+    - id: ai-solutions-engineer
+      name: AI Solutions Engineer
+      priority: medium
+  preferred_domains:
+    - document_ai
+    - edtech
+    - developer_tools
+  work_preferences:
+    remote: preferred
+    locations: []
+    employment_types:
+      - full_time
+    languages:
+      - ru
+      - en
+  compensation:
+    currencies: []
+    minimum: null
+    target: null
+  strategy:
+    primary_metric: evidence_coverage
+    require_verified_claims_for_applications: true
+    optimize_for:
+      - role_fit
+      - portfolio_evidence
+      - career_direction
