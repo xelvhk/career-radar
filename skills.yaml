@@ -3,31 +3,66 @@ skills:
   - id: python
     name: Python
     category: backend
-    level: practical
+    level: public_evidence
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/main.py
+          - src/contractops/rag/retrieval/hybrid.py
         experience_context: project
       - project_id: onboardica
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/app/main.py
+          - apps/api/app/services.py
         experience_context: project
       - project_id: vasya-ai
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/main.py
+          - core/orchestrator.py
+        experience_context: project
+
+  - id: fastapi
+    name: FastAPI
+    category: backend
+    level: public_evidence
+    evidence:
+      - project_id: contractops-ai
+        artifacts:
+          - apps/api/main.py
+          - apps/api/routers/questions.py
+          - tests/unit/test_questions_api.py
+        experience_context: project
+      - project_id: onboardica
+        artifacts:
+          - apps/api/app/main.py
+          - apps/api/app/api/v1/router.py
+          - apps/api/tests/test_api_demo_flow.py
+        experience_context: project
+      - project_id: vasya-ai
+        artifacts:
+          - apps/api/main.py
+          - apps/api/routes/chat.py
         experience_context: project
 
   - id: rest-api
-    name: REST API
+    name: REST API Design
     category: backend
-    level: practical
+    level: public_evidence
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/routers/questions.py
+          - tests/unit/test_questions_api.py
         experience_context: project
       - project_id: onboardica
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/app/api/v1/router.py
+          - apps/api/tests/test_api_demo_flow.py
         experience_context: project
       - project_id: vasya-ai
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/routes/chat.py
+          - tests/test_api_security_e2e.py
         experience_context: project
 
   - id: postgresql
@@ -36,22 +71,43 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - src/contractops/infrastructure/database/session.py
+          - docker-compose.yml
         experience_context: project
       - project_id: onboardica
-        artifacts: [README.md]
+        artifacts:
+          - apps/api/app/core/database.py
+          - docker-compose.yml
+        experience_context: project
+
+  - id: sqlalchemy
+    name: SQLAlchemy
+    category: backend
+    level: practical
+    evidence:
+      - project_id: contractops-ai
+        artifacts:
+          - src/contractops/infrastructure/database/session.py
+        experience_context: project
+      - project_id: onboardica
+        artifacts:
+          - apps/api/app/core/database.py
+          - apps/api/app/domain.py
         experience_context: project
 
   - id: docker
-    name: Docker
+    name: Docker and Compose
     category: infrastructure
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts: [docker-compose.yml]
         experience_context: project
       - project_id: onboardica
-        artifacts: [README.md]
+        artifacts:
+          - docker-compose.yml
+          - docker-compose.prod.yml
         experience_context: project
 
   - id: rag
@@ -60,7 +116,10 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - src/contractops/rag/question_answering/service.py
+          - apps/api/routers/questions.py
+          - tests/unit/test_questions_api.py
         experience_context: project
 
   - id: hybrid-search
@@ -69,7 +128,9 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - src/contractops/rag/retrieval/hybrid.py
+          - tests/unit/test_hybrid_retrieval.py
         experience_context: project
 
   - id: qdrant
@@ -78,7 +139,10 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - src/contractops/infrastructure/vector_store/qdrant_store.py
+          - src/contractops/infrastructure/vector_store/qdrant_sparse_retriever.py
+          - docker-compose.yml
         experience_context: project
 
   - id: reranking
@@ -87,7 +151,9 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - src/contractops/rag/retrieval/hybrid.py
+          - tests/unit/test_hybrid_retrieval.py
         experience_context: project
 
   - id: llm-evaluation
@@ -96,7 +162,118 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        artifacts: [README.md]
+        artifacts:
+          - docs/evaluation.md
+          - src/contractops/cli/retrieval_benchmark.py
+          - evaluation/fixtures/golden_questions.jsonl
+          - tests/unit/test_evaluation_harness.py
+        experience_context: project
+
+  - id: multi-tenant-systems
+    name: Multi-tenant Systems
+    category: backend
+    level: practical
+    evidence:
+      - project_id: onboardica
+        artifacts:
+          - apps/api/app/domain.py
+          - apps/api/app/services.py
+          - apps/api/tests/test_tenant_isolation.py
+        experience_context: project
+
+  - id: onboarding-analytics
+    name: Onboarding and Proficiency Analytics
+    category: education_product
+    level: practical
+    evidence:
+      - project_id: onboardica
+        artifacts:
+          - apps/api/app/services.py
+          - apps/api/tests/test_proficiency.py
+          - apps/api/tests/test_api_demo_flow.py
+        experience_context: project
+
+  - id: gamification
+    name: Product Gamification
+    category: education_product
+    level: practical
+    evidence:
+      - project_id: onboardica
+        artifacts:
+          - apps/api/app/domain.py
+          - apps/api/app/services.py
+          - apps/api/tests/test_gamification.py
+        experience_context: project
+
+  - id: nextjs-typescript
+    name: Next.js and TypeScript
+    category: frontend
+    level: practical
+    evidence:
+      - project_id: onboardica
+        artifacts:
+          - apps/web/app/page.tsx
+          - apps/web/package.json
+        experience_context: project
+
+  - id: local-llm
+    name: Local LLM Integration
+    category: ai_engineering
+    level: public_evidence
+    evidence:
+      - project_id: vasya-ai
+        artifacts:
+          - services/ollama_client.py
+          - apps/api/routes/chat.py
+          - README.md
+        experience_context: project
+
+  - id: local-first-architecture
+    name: Local-first Architecture
+    category: infrastructure
+    level: public_evidence
+    evidence:
+      - project_id: vasya-ai
+        artifacts:
+          - docs/adr/ADR-003-public-app-and-private-user-data.md
+          - services/project_registry_store.py
+          - tests/test_project_registry_store.py
+        experience_context: project
+
+  - id: api-security
+    name: API Security Controls
+    category: security
+    level: public_evidence
+    evidence:
+      - project_id: vasya-ai
+        artifacts:
+          - apps/api/deps.py
+          - apps/api/rate_limit.py
+          - services/secret_store.py
+          - tests/test_api_security_e2e.py
+          - tests/test_api_rate_limit.py
+        experience_context: project
+
+  - id: external-integrations
+    name: External Integration Boundaries
+    category: backend
+    level: public_evidence
+    evidence:
+      - project_id: vasya-ai
+        artifacts:
+          - services/github_obsidian_sync_service.py
+          - docs/adr/ADR-003-public-app-and-private-user-data.md
+        experience_context: project
+
+  - id: agent-orchestration
+    name: Agent Orchestration
+    category: ai_engineering
+    level: public_evidence
+    evidence:
+      - project_id: vasya-ai
+        artifacts:
+          - core/orchestrator.py
+          - apps/api/routes/chat.py
         experience_context: project
 
   - id: kubernetes

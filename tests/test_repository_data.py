@@ -19,6 +19,18 @@ class RepositoryDataTests(unittest.TestCase):
 
         self.assertEqual(issues, [])
 
+    def test_verified_catalog_has_expected_visibility_and_size(self) -> None:
+        projects = load_yaml(ROOT / "projects.yaml")["projects"]
+        skills = load_yaml(ROOT / "skills.yaml")["skills"]
+        projects_by_id = {project["id"]: project for project in projects}
+
+        self.assertEqual(len(projects), 3)
+        self.assertEqual(sum(len(project["artifacts"]) for project in projects), 46)
+        self.assertEqual(projects_by_id["contractops-ai"]["evidence_access"], "on_request")
+        self.assertEqual(projects_by_id["onboardica"]["evidence_access"], "on_request")
+        self.assertEqual(projects_by_id["vasya-ai"]["evidence_access"], "public")
+        self.assertNotIn("production", {skill["level"] for skill in skills})
+
     def test_validation_script_runs_from_the_repository_root(self) -> None:
         result = subprocess.run(
             [sys.executable, "scripts/validate_data.py"],

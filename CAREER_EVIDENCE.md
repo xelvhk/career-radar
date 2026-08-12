@@ -1,59 +1,76 @@
 # Career Evidence Register
 
-This file is the human review layer for `projects.yaml` and `skills.yaml`. A
-claim is application-ready only when its evidence is relevant, safe to share,
-and marked `verified` in the structured data.
+This is the human review layer for `projects.yaml` and `skills.yaml`. Structured
+data remains the source of truth for matching. No repository artifact is treated
+as production experience.
 
-## Verification rules
+## Evidence policy
 
-- `pending` means the artifact has not been checked. It must not be presented as
-  proof in a generated application.
-- `verified` means the artifact exists and directly supports the claim.
-- `private` means the evidence may inform local matching but must not be included
-  in public output.
-- A public repository proves implementation, not automatically production use.
-- Metrics require a reproducible command, dataset description, and dated result.
+- `verified` means the artifact exists at the pinned commit and directly supports
+  the claim.
+- `public` means the artifact is safe to link from a public application.
+- `on_request` means: **private repository; walkthrough or selected code samples
+  available on request**.
+- `private` means the artifact must not appear in generated output.
+- A project or README demonstrates implementation, not production operation.
+- Metrics require a reproducible command, fixture description, and dated result.
 
-## Evidence inventory
+## Verified projects
 
-| Project | Claim area | Candidate artifacts | Status | Verification needed |
+| Project | Repository | Access | Pinned revision | Strong evidence |
 |---|---|---|---|---|
-| ContractOps AI | Document RAG pipeline | Repository URL, architecture docs | Pending | Confirm repository and exact implementation |
-| ContractOps AI | Hybrid retrieval and reranking | `benchmark.py` | Pending | Run benchmark and document dataset/config |
-| ContractOps AI | Evaluation | `EVALUATION.md`, `evaluation/results.json` | Pending | Confirm metrics, command, and result provenance |
-| Onboardica | To be classified | None recorded | Pending | Add summary, repository, and reviewable artifacts |
-| Vasya AI | To be classified | None recorded | Pending | Add summary, repository, and reviewable artifacts |
+| ContractOps AI | `xelvhk/contractops_ai` | On request | `deadee8` | `src/contractops/rag/retrieval/hybrid.py`, `docs/evaluation.md`, `src/contractops/cli/retrieval_benchmark.py` |
+| Onboardica | `xelvhk/onboardica` | On request | `5f46688` | `apps/api/app/services.py`, `apps/api/tests/test_tenant_isolation.py`, `apps/web/app/page.tsx` |
+| Vasya AI | [`xelvhk/vasya_ai`](https://github.com/xelvhk/vasya_ai) | Public | `fd8e641` | `services/ollama_client.py`, `apps/api/rate_limit.py`, `docs/adr/ADR-003-public-app-and-private-user-data.md` |
 
-## Claim review queue
+GitHub visibility and pinned revisions were checked on 2026-08-12. Visibility
+must be refreshed before generating a real application.
 
-The initial profile proposes the following claims for verification:
+## Skill evidence matrix
 
-- Backend: Python, REST API, PostgreSQL.
-- AI engineering: RAG, hybrid search, Qdrant, reranking, evaluation.
-- Infrastructure: Docker.
-- Knowledge gaps or evidence gaps: Kubernetes, AWS, observability.
+| Skill | Strongest evidence | Project | Representative artifacts |
+|---|---|---|---|
+| Python | Public | Vasya AI | `apps/api/main.py`, `core/orchestrator.py` |
+| FastAPI | Public | Vasya AI | `apps/api/main.py`, `apps/api/routes/chat.py` |
+| REST API design | Public | Vasya AI | `apps/api/routes/chat.py`, `tests/test_api_security_e2e.py` |
+| PostgreSQL | On request | ContractOps / Onboardica | `src/contractops/infrastructure/database/session.py`, `apps/api/app/core/database.py` |
+| SQLAlchemy | On request | ContractOps / Onboardica | `src/contractops/infrastructure/database/session.py`, `apps/api/app/domain.py` |
+| Docker and Compose | On request | ContractOps / Onboardica | `docker-compose.yml`, `docker-compose.prod.yml` |
+| RAG | On request | ContractOps AI | `src/contractops/rag/question_answering/service.py`, `apps/api/routers/questions.py` |
+| Hybrid search | On request | ContractOps AI | `src/contractops/rag/retrieval/hybrid.py`, `tests/unit/test_hybrid_retrieval.py` |
+| Qdrant | On request | ContractOps AI | `src/contractops/infrastructure/vector_store/qdrant_store.py`, `src/contractops/infrastructure/vector_store/qdrant_sparse_retriever.py` |
+| Reranking | On request | ContractOps AI | `src/contractops/rag/retrieval/hybrid.py`, `tests/unit/test_hybrid_retrieval.py` |
+| LLM/retrieval evaluation | On request | ContractOps AI | `docs/evaluation.md`, `evaluation/fixtures/golden_questions.jsonl`, `tests/unit/test_evaluation_harness.py` |
+| Multi-tenant systems | On request | Onboardica | `apps/api/app/domain.py`, `apps/api/tests/test_tenant_isolation.py` |
+| Onboarding analytics | On request | Onboardica | `apps/api/app/services.py`, `apps/api/tests/test_proficiency.py` |
+| Gamification | On request | Onboardica | `apps/api/app/services.py`, `apps/api/tests/test_gamification.py` |
+| Next.js and TypeScript | On request | Onboardica | `apps/web/app/page.tsx`, `apps/web/package.json` |
+| Local LLM integration | Public | Vasya AI | `services/ollama_client.py`, `apps/api/routes/chat.py` |
+| Local-first architecture | Public | Vasya AI | `docs/adr/ADR-003-public-app-and-private-user-data.md`, `services/project_registry_store.py` |
+| API security controls | Public | Vasya AI | `apps/api/deps.py`, `apps/api/rate_limit.py`, `tests/test_api_security_e2e.py` |
+| External integration boundaries | Public | Vasya AI | `services/github_obsidian_sync_service.py`, `docs/adr/ADR-003-public-app-and-private-user-data.md` |
+| Agent orchestration | Public | Vasya AI | `core/orchestrator.py`, `apps/api/routes/chat.py` |
+| Kubernetes | Gap | None | No verified artifact |
+| AWS | Gap | None | No verified artifact |
+| Observability | Gap | None | No verified artifact |
 
-These entries are hypotheses until their referenced artifacts are checked. The
-system must preserve that distinction in matching and application generation.
+## Application rules
 
-## Evidence acceptance checklist
+- Public evidence may be linked directly.
+- On-request evidence may be summarized factually, followed by the approved
+  availability statement; private source links must not be presented as public.
+- Gap skills must not be rewritten as practical experience.
+- Generated claims must map to the exact artifact list in `skills.yaml`.
+- No claim may use the `production` level until operational context is recorded
+  separately and verified.
 
-For each claim:
+## Verification commands
 
-- [ ] The project repository or private source is identified.
-- [ ] The artifact exists at the recorded path or URL.
-- [ ] The artifact demonstrates the named skill directly.
-- [ ] The level is no stronger than the evidence supports.
-- [ ] Public sharing is permitted and contains no secrets or personal data.
-- [ ] Any metric includes reproduction instructions and context.
-- [ ] `projects.yaml` and `skills.yaml` are updated together.
-
-## Next verification pass
-
-1. Locate the canonical ContractOps AI repository and verify the three proposed
-   artifact paths.
-2. Add concise, factual summaries and safe repository URLs for Onboardica and
-   Vasya AI.
-3. Replace empty artifact lists for Python, REST API, PostgreSQL, Docker, RAG,
-   and Qdrant with exact paths.
-4. Downgrade or remove any claim that cannot be substantiated.
+```bash
+python3 scripts/validate_data.py
+python3 scripts/audit_sources.py \
+  --repo contractops-ai=/path/to/document_ops_ai \
+  --repo onboardica=/path/to/onboardica \
+  --repo vasya-ai=/path/to/ai_pal
+python3 -m unittest discover -s tests -v
+```

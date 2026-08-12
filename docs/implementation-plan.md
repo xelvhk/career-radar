@@ -14,6 +14,9 @@
 - [x] Define the product/data specification.
 - [x] Add conservative project, skill, goal, and evidence seed data.
 - [x] Add deterministic validation and repository contract tests.
+- [x] Separate verification from public/on-request/private disclosure.
+- [x] Verify the three source repositories at pinned revisions.
+- [x] Replace seed paths with an artifact-level evidence catalog.
 
 Acceptance: checked-in records validate locally and contain no invented proof.
 

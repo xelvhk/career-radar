@@ -10,7 +10,63 @@ projects:
     verified_at: "2026-08-12"
     artifacts:
       - path: README.md
-        kind: documentation
+        kind: product_documentation
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/main.py
+        kind: api_entrypoint
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/routers/questions.py
+        kind: api_route
+        verification: verified
+        disclosure: on_request
+      - path: src/contractops/infrastructure/database/session.py
+        kind: database_integration
+        verification: verified
+        disclosure: on_request
+      - path: docker-compose.yml
+        kind: infrastructure
+        verification: verified
+        disclosure: on_request
+      - path: src/contractops/rag/question_answering/service.py
+        kind: source_code
+        verification: verified
+        disclosure: on_request
+      - path: src/contractops/rag/retrieval/hybrid.py
+        kind: source_code
+        verification: verified
+        disclosure: on_request
+      - path: src/contractops/infrastructure/vector_store/qdrant_store.py
+        kind: source_code
+        verification: verified
+        disclosure: on_request
+      - path: src/contractops/infrastructure/vector_store/qdrant_sparse_retriever.py
+        kind: source_code
+        verification: verified
+        disclosure: on_request
+      - path: docs/evaluation.md
+        kind: evaluation_documentation
+        verification: verified
+        disclosure: on_request
+      - path: src/contractops/cli/retrieval_benchmark.py
+        kind: evaluation_harness
+        verification: verified
+        disclosure: on_request
+      - path: evaluation/fixtures/golden_questions.jsonl
+        kind: evaluation_fixture
+        verification: verified
+        disclosure: on_request
+      - path: tests/unit/test_hybrid_retrieval.py
+        kind: automated_test
+        verification: verified
+        disclosure: on_request
+      - path: tests/unit/test_evaluation_harness.py
+        kind: automated_test
+        verification: verified
+        disclosure: on_request
+      - path: tests/unit/test_questions_api.py
+        kind: automated_test
         verification: verified
         disclosure: on_request
 
@@ -24,7 +80,67 @@ projects:
     verified_at: "2026-08-12"
     artifacts:
       - path: README.md
-        kind: documentation
+        kind: product_documentation
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/app/main.py
+        kind: api_entrypoint
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/app/api/v1/router.py
+        kind: api_route
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/app/core/database.py
+        kind: database_integration
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/app/core/security.py
+        kind: security_control
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/app/domain.py
+        kind: domain_model
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/app/services.py
+        kind: application_service
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/tests/test_tenant_isolation.py
+        kind: automated_test
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/tests/test_proficiency.py
+        kind: automated_test
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/tests/test_gamification.py
+        kind: automated_test
+        verification: verified
+        disclosure: on_request
+      - path: apps/api/tests/test_api_demo_flow.py
+        kind: automated_test
+        verification: verified
+        disclosure: on_request
+      - path: apps/web/app/page.tsx
+        kind: frontend_entrypoint
+        verification: verified
+        disclosure: on_request
+      - path: apps/web/package.json
+        kind: frontend_manifest
+        verification: verified
+        disclosure: on_request
+      - path: docker-compose.yml
+        kind: infrastructure
+        verification: verified
+        disclosure: on_request
+      - path: docker-compose.prod.yml
+        kind: infrastructure
+        verification: verified
+        disclosure: on_request
+      - path: .github/workflows/ci.yml
+        kind: ci_workflow
         verification: verified
         disclosure: on_request
 
@@ -38,6 +154,62 @@ projects:
     verified_at: "2026-08-12"
     artifacts:
       - path: README.md
-        kind: documentation
+        kind: product_documentation
+        verification: verified
+        disclosure: public
+      - path: apps/api/main.py
+        kind: api_entrypoint
+        verification: verified
+        disclosure: public
+      - path: apps/api/deps.py
+        kind: security_control
+        verification: verified
+        disclosure: public
+      - path: apps/api/rate_limit.py
+        kind: security_control
+        verification: verified
+        disclosure: public
+      - path: apps/api/routes/chat.py
+        kind: api_route
+        verification: verified
+        disclosure: public
+      - path: core/orchestrator.py
+        kind: orchestration
+        verification: verified
+        disclosure: public
+      - path: services/ollama_client.py
+        kind: local_llm_integration
+        verification: verified
+        disclosure: public
+      - path: services/secret_store.py
+        kind: security_control
+        verification: verified
+        disclosure: public
+      - path: services/github_obsidian_sync_service.py
+        kind: external_integration
+        verification: verified
+        disclosure: public
+      - path: docs/adr/ADR-003-public-app-and-private-user-data.md
+        kind: architecture_decision
+        verification: verified
+        disclosure: public
+      - path: apps/api/routes/projects.py
+        kind: api_route
+        verification: verified
+        disclosure: public
+      - path: services/project_registry_store.py
+        kind: local_persistence
+        verification: verified
+        disclosure: public
+      - path: tests/test_api_security_e2e.py
+        kind: automated_test
+        verification: verified
+        disclosure: public
+      - path: tests/test_api_rate_limit.py
+        kind: automated_test
+        verification: verified
+        disclosure: public
+      - path: tests/test_project_registry_store.py
+        kind: automated_test
         verification: verified
         disclosure: public
