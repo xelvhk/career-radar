@@ -15,6 +15,7 @@ yet.
 - `projects.yaml` — projects that can substantiate skills
 - `career_goals.yaml` — role, market, and constraint preferences
 - `scripts/validate_data.py` — local contract and reference validation
+- `scripts/audit_sources.py` — read-only verification against local Git checkouts
 
 ## Quick start
 
@@ -24,5 +25,12 @@ python3 scripts/validate_data.py
 python3 -m unittest discover -s tests -v
 ```
 
-The seed records are deliberately conservative. `verification: pending` and
-`null` fields are work to complete, not facts the system may silently fill in.
+To audit pinned artifacts without storing local paths:
+
+```bash
+python3 scripts/audit_sources.py \
+  --repo project-id=/absolute/path/to/checkout
+```
+
+Verified evidence remains separate from disclosure. Private repository evidence
+may be marked `on_request`, but it never qualifies as `public_evidence`.

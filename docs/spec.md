@@ -41,6 +41,9 @@ python3 -m pip install -e .
 # Validate source data
 python3 scripts/validate_data.py
 
+# Audit pinned artifacts in local source repositories
+python3 scripts/audit_sources.py --repo project-id=/absolute/path/to/checkout
+
 # Run tests
 python3 -m unittest discover -s tests -v
 ```
@@ -61,7 +64,7 @@ docs/implementation-plan.md  Ordered future delivery plan
 
 ## Data Contract
 
-All top-level YAML files contain `schema_version: 1` and a named collection.
+All top-level YAML files contain `schema_version: 2` and a named collection.
 Identifiers use lowercase kebab-case and are stable once published.
 
 Claim levels are ordered but not interchangeable:
@@ -71,11 +74,17 @@ Claim levels are ordered but not interchangeable:
 - `public_evidence` — backed by a reviewable public artifact;
 - `production` — operated in a real production environment.
 
-Evidence verification states:
+Artifact verification and disclosure are independent:
 
 - `pending` — declared but not yet checked;
 - `verified` — artifact existence and relevance were checked;
-- `private` — evidence exists but must not be exposed publicly.
+- `public` — safe and reachable as public evidence;
+- `on_request` — may be discussed or shown selectively, but is not public;
+- `private` — must not be exposed in generated output.
+
+Every project pins an HTTPS repository URL, GitHub visibility, full source commit,
+verification date, and maximum evidence access. Local checkout paths are runtime
+arguments and never stored in the dataset.
 
 Example:
 
@@ -85,9 +94,14 @@ Example:
   level: practical
   evidence:
     - project_id: contractops-ai
-      verification: pending
-      artifacts: []
+      artifacts:
+        - src/contractops/rag/retrieval/hybrid.py
+      experience_context: project
 ```
+
+`practical` requires at least one verified artifact. `public_evidence` additionally
+requires public disclosure in a public repository. `production` requires an explicit
+production context and note; source code or README files never imply it.
 
 ## Code Style
 
@@ -105,6 +119,7 @@ def validate_profile(data: dict[str, object]) -> list[ValidationIssue]:
 ## Testing Strategy
 
 - Unit tests cover required fields, enums, identifiers, and cross-file references.
+- Git audit tests cover origin, pinned revision, tracked files, and local modifications.
 - A repository contract test validates the checked-in YAML as a complete dataset.
 - Tests use local fixtures only; no network, database, or model calls are allowed.
 
@@ -136,7 +151,7 @@ Never:
 - The four foundation files exist and describe the same stable project/skill IDs.
 - `python3 scripts/validate_data.py` exits zero for the repository dataset.
 - `python3 -m unittest discover -s tests -v` proves valid and invalid behavior.
-- Seed claims remain pending until artifact URLs and relevance are verified.
+- Verified claims retain independent disclosure and pinned source provenance.
 - Future phases are decomposed into reviewable, testable increments.
 
 ## Open Questions

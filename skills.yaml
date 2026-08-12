@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 skills:
   - id: python
     name: Python
@@ -6,8 +6,14 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts: []
+        artifacts: [README.md]
+        experience_context: project
+      - project_id: onboardica
+        artifacts: [README.md]
+        experience_context: project
+      - project_id: vasya-ai
+        artifacts: [README.md]
+        experience_context: project
 
   - id: rest-api
     name: REST API
@@ -15,8 +21,14 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts: []
+        artifacts: [README.md]
+        experience_context: project
+      - project_id: onboardica
+        artifacts: [README.md]
+        experience_context: project
+      - project_id: vasya-ai
+        artifacts: [README.md]
+        experience_context: project
 
   - id: postgresql
     name: PostgreSQL
@@ -24,8 +36,11 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts: []
+        artifacts: [README.md]
+        experience_context: project
+      - project_id: onboardica
+        artifacts: [README.md]
+        experience_context: project
 
   - id: docker
     name: Docker
@@ -33,8 +48,11 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts: []
+        artifacts: [README.md]
+        experience_context: project
+      - project_id: onboardica
+        artifacts: [README.md]
+        experience_context: project
 
   - id: rag
     name: Retrieval-Augmented Generation
@@ -42,8 +60,8 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts: []
+        artifacts: [README.md]
+        experience_context: project
 
   - id: hybrid-search
     name: Hybrid Search
@@ -51,9 +69,8 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts:
-          - benchmark.py
+        artifacts: [README.md]
+        experience_context: project
 
   - id: qdrant
     name: Qdrant
@@ -61,8 +78,8 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts: []
+        artifacts: [README.md]
+        experience_context: project
 
   - id: reranking
     name: Reranking
@@ -70,9 +87,8 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts:
-          - benchmark.py
+        artifacts: [README.md]
+        experience_context: project
 
   - id: llm-evaluation
     name: LLM and Retrieval Evaluation
@@ -80,16 +96,15 @@ skills:
     level: practical
     evidence:
       - project_id: contractops-ai
-        verification: pending
-        artifacts:
-          - EVALUATION.md
-          - evaluation/results.json
+        artifacts: [README.md]
+        experience_context: project
 
   - id: kubernetes
     name: Kubernetes
     category: infrastructure
     level: knowledge
     evidence: []
+
   - id: aws
     name: AWS
     category: infrastructure

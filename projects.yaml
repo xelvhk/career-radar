@@ -1,33 +1,43 @@
-schema_version: 1
+schema_version: 2
 projects:
   - id: contractops-ai
     name: ContractOps AI
-    summary: Document-processing RAG project with hybrid retrieval, reranking, and evaluation.
-    visibility: unknown
-    repository_url: null
-    verification: pending
+    summary: Evidence-first backend for contract ingestion, retrieval, citations, and evaluation.
+    repository_url: https://github.com/xelvhk/contractops_ai
+    repository_visibility: private
+    evidence_access: on_request
+    source_commit: deadee8ac14282f197f915dee1c30ad56be7634c
+    verified_at: "2026-08-12"
     artifacts:
-      - path: EVALUATION.md
+      - path: README.md
         kind: documentation
-        verification: pending
-      - path: benchmark.py
-        kind: source_code
-        verification: pending
-      - path: evaluation/results.json
-        kind: evaluation_result
-        verification: pending
+        verification: verified
+        disclosure: on_request
 
   - id: onboardica
     name: Onboardica
-    summary: null
-    visibility: unknown
-    repository_url: null
-    verification: pending
-    artifacts: []
+    summary: Multi-tenant B2B onboarding, mentoring, analytics, and gamification platform.
+    repository_url: https://github.com/xelvhk/onboardica
+    repository_visibility: private
+    evidence_access: on_request
+    source_commit: 5f46688672135ea8a0fdba2e466a8dde2eab02b7
+    verified_at: "2026-08-12"
+    artifacts:
+      - path: README.md
+        kind: documentation
+        verification: verified
+        disclosure: on_request
+
   - id: vasya-ai
     name: Vasya AI
-    summary: null
-    visibility: unknown
-    repository_url: null
-    verification: pending
-    artifacts: []
+    summary: Local-first voice AI assistant for desktop productivity and integrations.
+    repository_url: https://github.com/xelvhk/vasya_ai
+    repository_visibility: public
+    evidence_access: public
+    source_commit: fd8e6411e07f4628259a9c1525edfea62bc0dbf9
+    verified_at: "2026-08-12"
+    artifacts:
+      - path: README.md
+        kind: documentation
+        verification: verified
+        disclosure: public
