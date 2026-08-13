@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from career_radar.matching_config import validate_matching_config
 from career_radar.validation import load_yaml, validate_dataset
 
 
@@ -42,6 +43,19 @@ class RepositoryDataTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Career data is valid", result.stdout)
+
+    def test_matching_configuration_references_the_checked_in_profile(self) -> None:
+        matching = load_yaml(ROOT / "matching.yaml")
+        skills = load_yaml(ROOT / "skills.yaml")
+        goals = load_yaml(ROOT / "career_goals.yaml")
+
+        errors = validate_matching_config(matching, skills, goals)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(
+            set(matching["skill_aliases"]),
+            {skill["id"] for skill in skills["skills"]},
+        )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+AI Backend Engineer
+
+Requirements:
+- Strong Python and FastAPI experience
+- Experience with RAG and Qdrant
+- AWS knowledge
+
+Nice to have:
+- Kubernetes
+
+We offer a fully remote role working on document processing products.

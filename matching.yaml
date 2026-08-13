@@ -1,0 +1,78 @@
+schema_version: 1
+
+skill_aliases:
+  python: [python]
+  fastapi: [fastapi, fast api]
+  rest-api: [rest api, restful api, rest-api]
+  postgresql: [postgresql, postgres]
+  sqlalchemy: [sqlalchemy]
+  docker: [docker, docker compose, docker-compose]
+  rag: [rag, retrieval augmented generation, retrieval-augmented generation]
+  hybrid-search: [hybrid search, hybrid retrieval, гибридный поиск, гибридным поиском]
+  qdrant: [qdrant]
+  reranking: [reranking, reranker, re-ranking]
+  llm-evaluation: [llm evaluation, rag evaluation, retrieval evaluation, оценка llm]
+  multi-tenant-systems: [multi-tenant, multitenant, tenant isolation]
+  onboarding-analytics: [onboarding analytics, time to proficiency]
+  gamification: [gamification, геймификация]
+  nextjs-typescript: [next.js, nextjs, typescript]
+  local-llm: [local llm, ollama, локальная llm]
+  local-first-architecture: [local-first, local first]
+  api-security: [api security, rate limiting, api key auth]
+  external-integrations: [external integrations, api integrations]
+  agent-orchestration: [agent orchestration, multi-agent orchestration]
+  kubernetes: [kubernetes, k8s]
+  aws: [aws, amazon web services]
+  observability: [observability, opentelemetry, tracing]
+
+role_aliases:
+  ai-backend-engineer: [ai backend engineer, backend ai engineer]
+  rag-engineer: [rag engineer, retrieval engineer]
+  forward-deployed-engineer: [forward deployed engineer, fde]
+  ai-solutions-engineer: [ai solutions engineer, solutions engineer ai]
+
+domain_aliases:
+  document_ai: [document ai, document processing, contract processing, обработка документов, обработки документов]
+  edtech: [edtech, education technology, образовательные технологии]
+  developer_tools: [developer tools, devtools, инструменты разработчика]
+
+preferred_markers:
+  - nice to have
+  - preferred
+  - would be a plus
+  - будет плюсом
+  - желательно
+  - преимуществом будет
+
+negation_markers:
+  - not required
+  - optional, not required
+  - не обязательно
+  - не требуется
+
+required_section_markers: [requirements, required skills, требования, обязательно]
+preferred_section_markers: [nice to have, preferred qualifications, будет плюсом, желательно]
+section_stop_markers: [responsibilities, what you will do, обязанности, мы предлагаем, we offer]
+requirement_line_markers: [experience, knowledge, proficiency, tech stack, stack, опыт, знание, владение, стек]
+remote_markers: [remote, fully remote, удаленная работа, удалённая работа]
+onsite_markers: [on-site, onsite, office-based, работа в офисе]
+
+seniority_aliases:
+  junior: [junior, jr, младший]
+  middle: [middle, mid-level, мидл]
+  senior: [senior, sr, старший]
+  lead: [lead, tech lead, team lead, ведущий]
+
+weights:
+  technical: 30
+  evidence: 25
+  direction: 15
+  domain: 10
+  seniority: 10
+  location: 5
+  salary: 5
+
+thresholds:
+  apply_score: 75
+  skip_score: 50
+  minimum_confidence: 60
