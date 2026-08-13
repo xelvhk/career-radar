@@ -24,11 +24,11 @@ Verification: `python3 scripts/validate_data.py && python3 -m unittest discover 
 
 ## Phase 1: Manual Vacancy Match MVP
 
-- [ ] Define a normalized vacancy contract and safe text-ingestion boundary.
-- [ ] Extract requirements from pasted text with a deterministic/manual fallback.
-- [ ] Calculate technical, domain, seniority, evidence, direction, location, and
+- [x] Define a normalized vacancy contract and safe text-ingestion boundary.
+- [x] Extract requirements from pasted text with a deterministic/manual fallback.
+- [x] Calculate technical, domain, seniority, evidence, direction, location, and
       salary dimensions separately.
-- [ ] Present requirement-to-evidence mapping, gaps, confidence, and an
+- [x] Present requirement-to-evidence mapping, gaps, confidence, and an
       `APPLY`/`REVIEW`/`SKIP` recommendation with explainable weights.
 
 Acceptance: one pasted vacancy produces a reproducible score breakdown and never

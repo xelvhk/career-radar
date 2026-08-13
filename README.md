@@ -4,9 +4,9 @@ Career Radar is an evidence-first career intelligence project. It is designed to
 turn verifiable project work into vacancy matches, application arguments, and a
 market-driven learning roadmap without inventing experience.
 
-The repository is intentionally starting with the data foundation described in
-[`docs/spec.md`](docs/spec.md). There is no vacancy scraper, LLM pipeline, or UI
-yet.
+The repository combines the data foundation in [`docs/spec.md`](docs/spec.md)
+with a deterministic manual matching slice. There is no vacancy scraper, LLM
+pipeline, persistence layer, or UI yet.
 
 ## Current scope
 
@@ -16,6 +16,8 @@ yet.
 - `career_goals.yaml` — role, market, and constraint preferences
 - `scripts/validate_data.py` — local contract and reference validation
 - `scripts/audit_sources.py` — read-only verification against local Git checkouts
+- `matching.yaml` — deterministic RU/EN aliases, weights, and decision thresholds
+- `scripts/match_vacancy.py` — manual vacancy-to-evidence match report
 
 ## Quick start
 
@@ -34,3 +36,17 @@ python3 scripts/audit_sources.py \
 
 Verified evidence remains separate from disclosure. Private repository evidence
 may be marked `on_request`, but it never qualifies as `public_evidence`.
+
+## Match one vacancy
+
+Save the vacancy as UTF-8 text, then generate a local report:
+
+```bash
+python3 scripts/match_vacancy.py vacancy.txt
+python3 scripts/match_vacancy.py vacancy.txt --format json
+```
+
+The matcher is deterministic and offline. It recognizes only configured skills,
+shows unmapped lines and unknown dimensions explicitly, and never follows
+instructions or URLs embedded in vacancy text. See
+[`docs/manual-vacancy-match-spec.md`](docs/manual-vacancy-match-spec.md).

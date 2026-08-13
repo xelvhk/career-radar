@@ -158,5 +158,5 @@ Never:
 
 - Which countries, languages, salary currencies, and remote constraints are final?
 - Which project repositories and artifacts are safe to expose publicly?
-- Should the first matching MVP accept pasted text only or URL plus text?
+- Which labeled real vacancies should calibrate deterministic matching weights?
 - Which job sources permit automated collection under their current terms?
