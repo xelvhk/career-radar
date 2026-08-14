@@ -34,15 +34,51 @@ Verification: `python3 scripts/validate_data.py && python3 -m unittest discover 
 Acceptance: one pasted vacancy produces a reproducible score breakdown and never
 promotes a pending evidence item as verified.
 
-## Phase 2: Vacancy Collection
+## Phase 2: Hybrid Vacancy Watchlist
 
-- [ ] Research source terms and official APIs before selecting integrations.
-- [ ] Add source adapters with rate limits, provenance, deduplication, and raw
-      payload retention rules.
-- [ ] Add scheduled ingestion and failure visibility.
+Product direction: [`ideas/hybrid-vacancy-watchlist.md`](ideas/hybrid-vacancy-watchlist.md).
 
-Acceptance: normalized vacancies retain source attribution and adapter failures do
-not corrupt prior data.
+### Phase 2A: Local Watchlist Vertical Slice
+
+- [ ] Define saved search profiles generated from verified skills and explicit
+      query exclusions.
+- [ ] Define a normalized collected-vacancy contract with source provenance,
+      retrieval time, collection method, and deterministic identity.
+- [ ] Select local persistence only after documenting inbox, deduplication, and
+      privacy requirements.
+- [ ] Add a local panel with one `Scan vacancies` action, per-source progress,
+      and isolated failure visibility.
+- [ ] Route normalized vacancies through the existing matcher into an Opportunity
+      Inbox ranked by `APPLY`, `REVIEW`, and `SKIP`.
+
+Acceptance: one manual scan produces a persistent, deduplicated, explainable inbox
+without storing credentials or changing evidence-disclosure rules.
+
+### Phase 2B: Source Adapters
+
+- [ ] Research current terms, official APIs, authentication boundaries, and rate
+      limits before implementing each source.
+- [ ] Implement HeadHunter as the first production-quality adapter.
+- [ ] Preserve manual URL or text import as the universal fallback.
+- [ ] Add Habr Career after the adapter contract and failure modes are proven.
+- [ ] Add LinkedIn and Indeed sequentially, using an explicitly authorized browser
+      session only where permitted and necessary.
+- [ ] Retain source attribution and useful prior results when one adapter fails.
+
+Acceptance: each enabled source has contract fixtures, rate-limit behavior,
+provenance, and failure tests; no adapter failure corrupts prior inbox data.
+
+### Phase 2C: Calibration and Scheduled Collection
+
+- [ ] Review ranking quality against 20-30 real vacancies across the saved search
+      profiles before changing weights or thresholds.
+- [ ] Record false positives, false negatives, duplicate decisions, and unmapped
+      requirements as calibration data.
+- [ ] Add opt-in scheduled scans only after manual scans demonstrate useful signal.
+- [ ] Surface last-success, last-failure, and stale-source state in the panel.
+
+Acceptance: ranking changes are justified by labeled examples, and scheduled scans
+are observable, rate-limited, and safe to rerun.
 
 ## Phase 3: Application Preparation
 
@@ -85,6 +121,7 @@ vacancies rather than presenting model intuition as market fact.
 
 - Foundation: contracts and checked-in data pass local validation.
 - MVP: pasted vacancy flows end-to-end with no external dependency required.
+- Watchlist: one action creates a persistent, deduplicated, explainable inbox.
 - Collection: one authorized source works reliably before adding another.
 - Applications: a human reviews all claims and actions before export.
 - Intelligence: recommendations are reproducible from stored observations.
