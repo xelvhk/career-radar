@@ -144,6 +144,29 @@ projects:
         verification: verified
         disclosure: on_request
 
+
+  - id: onboardica-public-case-study
+    name: Onboardica Public Case Study
+    summary: Sanitized public proof page for the private Onboardica onboarding platform.
+    repository_url: https://github.com/xelvhk/aboutme
+    repository_visibility: public
+    evidence_access: public
+    source_commit: ad3882a75627bfa7b837f40c1213e87a745e8b43
+    verified_at: "2026-08-17"
+    artifacts:
+      - path: src/pages/onboardicaCaseStudy.jsx
+        kind: public_case_study_source
+        verification: verified
+        disclosure: public
+      - path: public/project-previews/onboardica.svg
+        kind: public_preview_asset
+        verification: verified
+        disclosure: public
+      - path: public/case-studies/onboardica/02-manager-dashboard.png
+        kind: public_screenshot
+        verification: verified
+        disclosure: public
+
   - id: vasya-ai
     name: Vasya AI
     summary: Local-first voice AI assistant for desktop productivity and integrations.

@@ -21,10 +21,10 @@ as production experience.
 |---|---|---|---|---|
 | ContractOps AI | `xelvhk/contractops_ai` | On request | `deadee8` | `src/contractops/rag/retrieval/hybrid.py`, `docs/evaluation.md`, `src/contractops/cli/retrieval_benchmark.py` |
 | Onboardica | `xelvhk/onboardica` | On request | `5f46688` | `apps/api/app/services.py`, `apps/api/tests/test_tenant_isolation.py`, `apps/web/app/page.tsx` |
+| Onboardica public case study | [`xelvhk/aboutme`](https://github.com/xelvhk/aboutme) | Public | `ad3882a` | [Sanitized case study](https://xelvhk.github.io/aboutme/#/case-studies/onboardica), `src/pages/onboardicaCaseStudy.jsx`, sanitized screenshots |
 | Vasya AI | [`xelvhk/vasya_ai`](https://github.com/xelvhk/vasya_ai) | Public | `fd8e641` | `services/ollama_client.py`, `apps/api/rate_limit.py`, `docs/adr/ADR-003-public-app-and-private-user-data.md` |
 
-GitHub visibility and pinned revisions were checked on 2026-08-12. Visibility
-must be refreshed before generating a real application.
+GitHub visibility and pinned revisions for the original private project set were checked on 2026-08-12. The sanitized Onboardica public case study was checked on 2026-08-17. Visibility must be refreshed before generating a real application.
 
 ## Skill evidence matrix
 
@@ -56,7 +56,7 @@ must be refreshed before generating a real application.
 
 ## Application rules
 
-- Public evidence may be linked directly.
+- Public evidence may be linked directly. For Onboardica, link the sanitized public case study, not the private source repository.
 - On-request evidence may be summarized factually, followed by the approved
   availability statement; private source links must not be presented as public.
 - Gap skills must not be rewritten as practical experience.

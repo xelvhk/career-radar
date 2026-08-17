@@ -25,10 +25,12 @@ class RepositoryDataTests(unittest.TestCase):
         skills = load_yaml(ROOT / "skills.yaml")["skills"]
         projects_by_id = {project["id"]: project for project in projects}
 
-        self.assertEqual(len(projects), 3)
-        self.assertEqual(sum(len(project["artifacts"]) for project in projects), 46)
+        self.assertEqual(len(projects), 4)
+        self.assertEqual(sum(len(project["artifacts"]) for project in projects), 49)
         self.assertEqual(projects_by_id["contractops-ai"]["evidence_access"], "on_request")
         self.assertEqual(projects_by_id["onboardica"]["evidence_access"], "on_request")
+        self.assertEqual(projects_by_id["onboardica-public-case-study"]["evidence_access"], "public")
+        self.assertEqual(projects_by_id["onboardica-public-case-study"]["repository_visibility"], "public")
         self.assertEqual(projects_by_id["vasya-ai"]["evidence_access"], "public")
         self.assertNotIn("production", {skill["level"] for skill in skills})
 
