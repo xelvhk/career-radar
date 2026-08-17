@@ -31,6 +31,10 @@ class MatchingCliTests(unittest.TestCase):
         self.assertIn(payload["recommendation"], {"APPLY", "REVIEW", "SKIP"})
         self.assertIn("dimensions", payload)
         self.assertIn("requirementMappings", payload)
+        self.assertIn("minimumYearsExperience", payload["vacancy"])
+        self.assertIn("requiresProductionExperience", payload["vacancy"])
+        self.assertIn("locationConstraints", payload["vacancy"])
+        self.assertIn("unverifiedConstraints", payload)
 
     def test_markdown_cli_explains_recommendation(self) -> None:
         result = subprocess.run(

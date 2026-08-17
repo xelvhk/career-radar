@@ -46,6 +46,7 @@ class MatchReport:
     dimensions: tuple[MatchDimension, ...]
     requirement_mappings: tuple[RequirementMapping, ...]
     required_gaps: tuple[str, ...]
+    unverified_constraints: tuple[str, ...]
     overall_score: int
     confidence: int
     recommendation: Literal["APPLY", "REVIEW", "SKIP"]
@@ -96,14 +97,20 @@ def analyze_vacancy(
         for item in mappings
         if item.importance == "required" and item.evidence_status == "gap"
     )
+    unverified_constraints = _unverified_constraints(vacancy, goals)
     recommendation, reasons = _recommend(
-        overall_score, confidence, required_gaps, config
+        overall_score,
+        confidence,
+        required_gaps,
+        unverified_constraints,
+        config,
     )
     return MatchReport(
         vacancy=vacancy,
         dimensions=dimensions,
         requirement_mappings=mappings,
         required_gaps=required_gaps,
+        unverified_constraints=unverified_constraints,
         overall_score=overall_score,
         confidence=confidence,
         recommendation=recommendation,
@@ -250,14 +257,23 @@ def _recommend(
     score: int,
     confidence: int,
     required_gaps: tuple[str, ...],
+    unverified_constraints: tuple[str, ...],
     config: MatchingConfig,
 ) -> tuple[Literal["APPLY", "REVIEW", "SKIP"], tuple[str, ...]]:
     if (
         score >= config.apply_score
         and confidence >= config.minimum_confidence
         and not required_gaps
+        and not unverified_constraints
     ):
         return "APPLY", ("high match with sufficient confidence and no required gaps",)
+    if unverified_constraints:
+        reasons = ["mandatory career constraints are not verified"]
+        if required_gaps:
+            reasons.append("required skill gaps need human review")
+        if confidence < config.minimum_confidence:
+            reasons.append("confidence is below the automatic-decision threshold")
+        return "REVIEW", tuple(reasons)
     if score < config.skip_score and confidence >= config.minimum_confidence:
         return "SKIP", ("low match with sufficient confidence",)
     reasons: list[str] = []
@@ -268,3 +284,30 @@ def _recommend(
     if not reasons:
         reasons.append("match score is between automatic decision thresholds")
     return "REVIEW", tuple(reasons)
+
+
+def _unverified_constraints(
+    vacancy: Vacancy, goals: dict[str, Any]
+) -> tuple[str, ...]:
+    constraints: list[str] = []
+    profile = goals.get("experience_profile", {})
+    years = profile.get("commercial_years") if isinstance(profile, dict) else None
+    if vacancy.minimum_years_experience is not None and (
+        type(years) is not int or years < vacancy.minimum_years_experience
+    ):
+        constraints.append(
+            f"minimum_years_experience:{vacancy.minimum_years_experience}"
+        )
+    has_production = (
+        profile.get("verified_production_experience")
+        if isinstance(profile, dict)
+        else None
+    )
+    if vacancy.requires_production_experience and has_production is not True:
+        constraints.append("production_experience")
+    locations = goals.get("work_preferences", {}).get("current_country_codes")
+    for constraint in vacancy.location_constraints:
+        country = constraint.removeprefix("outside:")
+        if not isinstance(locations, list) or country in locations:
+            constraints.append(f"location:{constraint}")
+    return tuple(constraints)

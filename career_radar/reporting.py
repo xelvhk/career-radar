@@ -15,6 +15,11 @@ def report_to_dict(report: MatchReport) -> dict[str, Any]:
             "title": report.vacancy.title,
             "seniority": report.vacancy.seniority,
             "isRemote": report.vacancy.is_remote,
+            "minimumYearsExperience": report.vacancy.minimum_years_experience,
+            "requiresProductionExperience": (
+                report.vacancy.requires_production_experience
+            ),
+            "locationConstraints": list(report.vacancy.location_constraints),
             "targetRoles": list(report.vacancy.target_roles),
             "domains": list(report.vacancy.domains),
             "unmappedRequirementLines": list(
@@ -26,6 +31,7 @@ def report_to_dict(report: MatchReport) -> dict[str, Any]:
         "recommendation": report.recommendation,
         "reasons": list(report.reasons),
         "requiredGaps": list(report.required_gaps),
+        "unverifiedConstraints": list(report.unverified_constraints),
         "dimensions": [
             {
                 "name": item.name,
@@ -99,6 +105,11 @@ def report_to_markdown(report: MatchReport) -> str:
     if report.required_gaps:
         lines.extend(["", "## Required gaps", ""])
         lines.extend(f"- `{skill_id}`" for skill_id in report.required_gaps)
+    if report.unverified_constraints:
+        lines.extend(["", "## Unverified mandatory constraints", ""])
+        lines.extend(
+            f"- `{constraint}`" for constraint in report.unverified_constraints
+        )
     if report.vacancy.unmapped_requirement_lines:
         lines.extend(["", "## Unmapped requirement lines", ""])
         lines.extend(

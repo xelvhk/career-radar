@@ -121,6 +121,66 @@ class VacancyMatchingTests(unittest.TestCase):
         self.assertEqual(mapping.projects, ())
         self.assertEqual(mapping.artifacts, ())
 
+    def test_unverified_mandatory_experience_constraints_block_apply(self) -> None:
+        report = self.analyze(
+            "AI Backend Engineer\n"
+            "Remote document processing role\n"
+            "Requirements:\n"
+            "- Python and FastAPI\n"
+            "- 3+ years of production experience\n"
+        )
+
+        self.assertGreaterEqual(report.overall_score, 75)
+        self.assertIn("minimum_years_experience:3", report.unverified_constraints)
+        self.assertIn("production_experience", report.unverified_constraints)
+        self.assertEqual(report.recommendation, "REVIEW")
+
+    def test_unverified_constraint_never_causes_automatic_skip(self) -> None:
+        report = self.analyze(
+            "Unrelated Role\n"
+            "Requirements:\n"
+            "- 10+ years of production experience\n"
+        )
+
+        self.assertLess(report.overall_score, self.config.skip_score)
+        self.assertTrue(report.unverified_constraints)
+        self.assertEqual(report.recommendation, "REVIEW")
+
+    def test_explicit_profile_data_can_verify_mandatory_constraints(self) -> None:
+        goals = copy.deepcopy(self.goals)
+        goals["career_goals"]["experience_profile"] = {
+            "commercial_years": 5,
+            "verified_production_experience": True,
+        }
+        goals["career_goals"]["work_preferences"]["current_country_codes"] = [
+            "US"
+        ]
+
+        report = analyze_vacancy(
+            "AI Backend Engineer\n"
+            "Remote document processing role; candidate must be outside Russia.\n"
+            "Requirements:\n"
+            "- Python and FastAPI\n"
+            "- 3+ years of production experience\n",
+            projects_data=self.projects,
+            skills_data=self.skills,
+            goals_data=goals,
+            config=self.config,
+        )
+
+        self.assertEqual(report.unverified_constraints, ())
+        self.assertEqual(report.recommendation, "APPLY")
+
+    def test_calibration_fixtures_never_apply_with_unresolved_constraints_or_gaps(self) -> None:
+        fixture_directory = ROOT / "tests/fixtures/calibration"
+
+        for fixture in sorted(fixture_directory.glob("*.txt")):
+            with self.subTest(fixture=fixture.name):
+                report = self.analyze(fixture.read_text())
+                self.assertTrue(report.requirement_mappings)
+                if report.required_gaps or report.unverified_constraints:
+                    self.assertNotEqual(report.recommendation, "APPLY")
+
 
 if __name__ == "__main__":
     unittest.main()
