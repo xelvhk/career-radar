@@ -1,0 +1,13 @@
+Python Developer
+Junior, возможность работы в удалённом формате.
+
+Требования:
+- Python на базовом уровне.
+- FastAPI или готовность освоить его.
+- Базовый SQL и PostgreSQL.
+- Unit-тесты и Git.
+- Docker Compose.
+- REST-приложения.
+- Django.
+
+Источник: https://career.habr.com/vacancies/1000163346

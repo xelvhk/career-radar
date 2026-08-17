@@ -27,6 +27,7 @@ class MatchingConfig:
     compiled_role_aliases: tuple[tuple[str, re.Pattern[str]], ...]
     compiled_domain_aliases: tuple[tuple[str, re.Pattern[str]], ...]
     compiled_seniority_aliases: tuple[tuple[str, re.Pattern[str]], ...]
+    compiled_location_constraint_aliases: tuple[tuple[str, re.Pattern[str]], ...]
     preferred_markers: tuple[str, ...]
     negation_markers: tuple[str, ...]
     required_section_markers: tuple[str, ...]
@@ -35,6 +36,7 @@ class MatchingConfig:
     requirement_line_markers: tuple[str, ...]
     remote_markers: tuple[str, ...]
     onsite_markers: tuple[str, ...]
+    production_experience_markers: tuple[str, ...]
     weights: dict[str, int]
     apply_score: int
     skip_score: int
@@ -53,6 +55,9 @@ def load_matching_config(
         compiled_role_aliases=_compile_alias_map(data["role_aliases"]),
         compiled_domain_aliases=_compile_alias_map(data["domain_aliases"]),
         compiled_seniority_aliases=_compile_alias_map(data["seniority_aliases"]),
+        compiled_location_constraint_aliases=_compile_alias_map(
+            data["location_constraint_aliases"]
+        ),
         preferred_markers=_markers(data["preferred_markers"]),
         negation_markers=_markers(data["negation_markers"]),
         required_section_markers=_markers(data["required_section_markers"]),
@@ -61,6 +66,9 @@ def load_matching_config(
         requirement_line_markers=_markers(data["requirement_line_markers"]),
         remote_markers=_markers(data["remote_markers"]),
         onsite_markers=_markers(data["onsite_markers"]),
+        production_experience_markers=_markers(
+            data["production_experience_markers"]
+        ),
         weights=dict(data["weights"]),
         apply_score=data["thresholds"]["apply_score"],
         skip_score=data["thresholds"]["skip_score"],
@@ -72,8 +80,8 @@ def validate_matching_config(
     data: dict[str, Any], skills_data: dict[str, Any], goals_data: dict[str, Any]
 ) -> list[str]:
     errors: list[str] = []
-    if data.get("schema_version") != 1:
-        errors.append("schema_version must equal 1")
+    if data.get("schema_version") != 2:
+        errors.append("schema_version must equal 2")
 
     skill_ids = _ids(skills_data.get("skills"))
     goals = goals_data.get("career_goals", {})
@@ -99,6 +107,14 @@ def validate_matching_config(
     else:
         _validate_alias_values("seniority_aliases", seniority, errors)
 
+    location_constraints = data.get("location_constraint_aliases")
+    if not isinstance(location_constraints, dict) or not location_constraints:
+        errors.append("location_constraint_aliases must be a non-empty mapping")
+    else:
+        _validate_alias_values(
+            "location_constraint_aliases", location_constraints, errors
+        )
+
     for key in (
         "preferred_markers",
         "negation_markers",
@@ -108,6 +124,7 @@ def validate_matching_config(
         "requirement_line_markers",
         "remote_markers",
         "onsite_markers",
+        "production_experience_markers",
     ):
         if not _string_list(data.get(key)):
             errors.append(f"{key} must be a non-empty list of strings")

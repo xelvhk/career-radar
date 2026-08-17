@@ -1,0 +1,17 @@
+ML Platform Engineer
+Middle, можно удалённо.
+
+Требования:
+- Python, FastAPI, Pydantic и SQLAlchemy.
+- PostgreSQL, Redis и OpenSearch.
+- Docker и Kubernetes в production-кластерах.
+- Airflow, MLflow и CI/CD.
+- Опыт MLOps или ML Engineer от трёх лет.
+- Проектирование асинхронных высоконагруженных API.
+- Мониторинг production ML-сервисов.
+
+Будет плюсом:
+- Опыт с агентными системами, LangChain, LlamaIndex или LangGraph.
+- Инференс LLM через vLLM.
+
+Источник: https://career.habr.com/vacancies/1000167034

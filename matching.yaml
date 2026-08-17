@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 
 skill_aliases:
   python: [python]
@@ -26,10 +26,21 @@ skill_aliases:
   observability: [observability, opentelemetry, tracing]
 
 role_aliases:
-  ai-backend-engineer: [ai backend engineer, backend ai engineer]
-  rag-engineer: [rag engineer, retrieval engineer]
+  ai-backend-engineer:
+    - ai backend engineer
+    - backend ai engineer
+    - ai/ml engineer
+    - ai ml engineer
+    - backend / platform engineer
+    - backend platform engineer
+  rag-engineer:
+    - rag engineer
+    - retrieval engineer
+    - llm engineer
+    - python / llm engineer
+    - python llm engineer
   forward-deployed-engineer: [forward deployed engineer, fde]
-  ai-solutions-engineer: [ai solutions engineer, solutions engineer ai]
+  ai-solutions-engineer: [ai solutions engineer, solutions engineer ai, ai architect, ai архитектор]
 
 domain_aliases:
   document_ai: [document ai, document processing, contract processing, обработка документов, обработки документов]
@@ -54,8 +65,63 @@ required_section_markers: [requirements, required skills, требования, 
 preferred_section_markers: [nice to have, preferred qualifications, будет плюсом, желательно]
 section_stop_markers: [responsibilities, what you will do, обязанности, мы предлагаем, we offer]
 requirement_line_markers: [experience, knowledge, proficiency, tech stack, stack, опыт, знание, владение, стек]
-remote_markers: [remote, fully remote, удаленная работа, удалённая работа]
+remote_markers:
+  - remote
+  - fully remote
+  - удаленная работа
+  - удалённая работа
+  - можно удаленно
+  - можно удалённо
+  - удаленный формат
+  - удалённый формат
+  - полностью удаленный формат работы
+  - полностью удалённый формат работы
+  - возможность работы в удаленном формате
+  - возможность работы в удалённом формате
 onsite_markers: [on-site, onsite, office-based, работа в офисе]
+
+production_experience_markers:
+  - production experience
+  - production applications
+  - production systems
+  - production services
+  - production-приложений
+  - production-сервисов
+  - production-кластерах
+  - опыт эксплуатации production
+  - опыт работы в проде
+  - промышленной эксплуатации
+
+location_constraint_aliases:
+  "outside:RU":
+    - candidate must be outside russia
+    - must be located outside russia
+    - required location outside russia
+    - кандидат должен находиться вне россии
+    - кандидат должен находиться вне рф
+    - кандидат должна находиться вне россии
+    - кандидат должна находиться вне рф
+    - требуемая локация вне россии
+    - требуемая локация вне рф
+  "outside:BY":
+    - candidate must be outside belarus
+    - candidate must be outside russia and belarus
+    - must be located outside belarus
+    - must be located outside russia and belarus
+    - required location outside belarus
+    - required location outside russia and belarus
+    - кандидат должен находиться вне беларуси
+    - кандидат должен находиться вне рб
+    - кандидат должен находиться вне россии и беларуси
+    - кандидат должен находиться вне рф и рб
+    - кандидат должна находиться вне беларуси
+    - кандидат должна находиться вне рб
+    - кандидат должна находиться вне россии и беларуси
+    - кандидат должна находиться вне рф и рб
+    - требуемая локация вне беларуси
+    - требуемая локация вне рб
+    - требуемая локация вне россии и беларуси
+    - требуемая локация вне рф и рб
 
 seniority_aliases:
   junior: [junior, jr, младший]

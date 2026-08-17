@@ -88,6 +88,75 @@ class VacancyParserTests(unittest.TestCase):
 
         self.assertEqual(vacancy.requirements, ())
 
+    def test_role_aliases_are_matched_against_title_only(self) -> None:
+        vacancy = parse_vacancy(
+            "Generic Platform Role\nRequirements:\n- Work with an AI Backend Engineer\n",
+            self.config,
+        )
+
+        self.assertEqual(vacancy.target_roles, ())
+
+    def test_ignores_leading_blank_lines_before_the_title(self) -> None:
+        vacancy = parse_vacancy(
+            "\n\nAI Backend Engineer\nRequirements:\n- Python\n",
+            self.config,
+        )
+
+        self.assertEqual(vacancy.title, "AI Backend Engineer")
+        self.assertEqual(
+            tuple(item.skill_id for item in vacancy.requirements),
+            ("python",),
+        )
+
+    def test_calibration_titles_and_natural_work_modes_are_recognized(self) -> None:
+        expected = {
+            "01-lead-ai-ml.txt": (("ai-backend-engineer",), False),
+            "02-ml-platform.txt": ((), True),
+            "03-backend-platform.txt": (("ai-backend-engineer",), True),
+            "04-ai-architect.txt": (("ai-solutions-engineer",), True),
+            "05-senior-fullstack.txt": ((), True),
+            "06-ml-devops.txt": ((), False),
+            "07-junior-python.txt": ((), True),
+            "08-python-llm-rag.txt": (("rag-engineer",), True),
+        }
+
+        for filename, (roles, is_remote) in expected.items():
+            with self.subTest(filename=filename):
+                vacancy = parse_vacancy(
+                    (ROOT / "tests/fixtures/calibration" / filename).read_text(),
+                    self.config,
+                )
+                self.assertEqual(vacancy.target_roles, roles)
+                self.assertEqual(vacancy.is_remote, is_remote)
+                self.assertTrue(vacancy.requirements)
+
+    def test_extracts_mandatory_experience_and_location_constraints(self) -> None:
+        vacancy = parse_vacancy(
+            "AI Architect\n"
+            "Candidate must be outside Russia and Belarus.\n"
+            "Requirements:\n"
+            "- 5+ years building production applications with Python.\n",
+            self.config,
+        )
+
+        self.assertEqual(vacancy.minimum_years_experience, 5)
+        self.assertTrue(vacancy.requires_production_experience)
+        self.assertCountEqual(
+            vacancy.location_constraints,
+            ("outside:RU", "outside:BY"),
+        )
+
+    def test_does_not_treat_company_geography_as_candidate_constraint(self) -> None:
+        vacancy = parse_vacancy(
+            "AI Architect\n"
+            "The company operates outside Russia and Belarus.\n"
+            "Requirements:\n"
+            "- Python.\n",
+            self.config,
+        )
+
+        self.assertEqual(vacancy.location_constraints, ())
+
 
 if __name__ == "__main__":
     unittest.main()

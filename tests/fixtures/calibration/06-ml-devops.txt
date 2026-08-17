@@ -1,0 +1,13 @@
+ML/DevOps Engineer
+Москва, работа в офисе.
+
+Требования:
+- Linux, Docker и Kubernetes.
+- GitLab CI, Ansible, Terraform и Airflow.
+- Python, FastAPI и vLLM.
+- PostgreSQL, Elasticsearch и Qdrant.
+- Prometheus, Grafana и мониторинг деградации моделей.
+- Опыт настройки GPU для обучения и инференса.
+- Безопасность и надёжность многоэтапных ML-пайплайнов.
+
+Источник: https://career.habr.com/vacancies/1000167265

@@ -1,0 +1,13 @@
+Senior Full-Stack Engineer (Python / SvelteKit / Kotlin Multiplatform)
+Senior, полностью удалённый формат работы.
+
+Требования:
+- Python, FastAPI, SQLAlchemy и PostgreSQL.
+- TypeScript и SvelteKit.
+- Kotlin Multiplatform.
+- Docker, GitLab CI и AWS.
+- Пять лет разработки production-приложений.
+- Проектирование асинхронных API и фоновых задач.
+- Опыт с LLM, AI-агентами и MCP.
+
+Источник: https://career.habr.com/vacancies/1000168229

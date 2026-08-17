@@ -1,0 +1,17 @@
+Python / LLM Engineer: RAG и ИИ-агенты
+Middle, удаленная работа.
+
+Требования:
+- Коммерческая разработка на Python от 2 лет.
+- Практический опыт с LLM-приложениями и RAG.
+- Архитектура агентных систем и оркестрация.
+- REST API, WebSocket и базы данных.
+- Docker.
+- Chunking, embeddings, vector search, reranking и retrieval evaluation.
+
+Будет плюсом:
+- Qdrant, pgvector или Weaviate.
+- Ollama, vLLM или другие local LLM.
+- Аудит, безопасность и логирование.
+
+Источник: https://career.habr.com/vacancies/1000167695

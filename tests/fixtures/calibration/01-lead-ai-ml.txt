@@ -1,0 +1,14 @@
+LEAD AI/ML ENGINEER
+Lead, Москва, работа в офисе.
+
+Требования:
+- Production Python и FastAPI.
+- PostgreSQL и Redis.
+- Kubernetes.
+- Опыт с production LLM-приложениями и RAG.
+- Embeddings, vector search, hybrid search и reranking.
+- Компьютерное зрение и мультимодальные модели.
+- High-load системы и оптимизация latency.
+- MLOps, мониторинг моделей и A/B тестирование.
+
+Источник: https://career.habr.com/vacancies/1000164602
