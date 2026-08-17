@@ -21,11 +21,13 @@ python3 scripts/match_vacancy.py vacancy.txt --format json
 The structured result contains:
 
 - vacancy title and extracted seniority when deterministic markers exist;
+- explicit minimum-years, production-experience, and candidate-location
+  constraints when conservative markers exist;
 - normalized required and preferred skill requirements;
 - technical, evidence, domain, career-direction, seniority, location, and salary
   dimensions, each with a score or explicit `unknown` state;
 - requirement-to-evidence mappings containing only cataloged artifacts;
-- gaps and an explainable recommendation;
+- gaps, unverified mandatory constraints, and an explainable recommendation;
 - overall score and confidence as integer percentages.
 
 JSON is the stable machine-readable interface. Human-readable Markdown is the
@@ -76,9 +78,16 @@ unmapped requirement-like lines remain.
 
 Recommendation policy:
 
-- `APPLY`: score ≥75, confidence ≥60, and no required skill gap;
-- `SKIP`: score <50 and confidence ≥60;
+- `APPLY`: score ≥75, confidence ≥60, no required skill gap, and no unverified
+  mandatory constraint;
+- `SKIP`: score <50 and confidence ≥60, unless a mandatory constraint remains
+  unverified;
 - `REVIEW`: every other case, including low-confidence input.
+
+An unverified mandatory constraint is not evidence of a mismatch. It blocks both
+automatic `APPLY` and automatic `SKIP` until explicit profile data can resolve it.
+Project source code is never treated as proof of commercial or production
+experience.
 
 ## Architecture and Style
 
@@ -94,7 +103,8 @@ are concise and never echo full vacancy content.
 ## Testing Strategy
 
 - Unit tests cover alias boundaries, preferred/negated lines, duplicate aliases,
-  evidence disclosure, unknown dimensions, score thresholds, and required gaps.
+  evidence disclosure, unknown dimensions, score thresholds, required gaps, and
+  mandatory career constraints.
 - Integration tests run the CLI against sanitized English and Russian fixtures.
 - Repository tests validate `matching.yaml` references, weights, and thresholds.
 - No test makes network, model, database, or source-repository calls.

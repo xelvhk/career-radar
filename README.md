@@ -47,6 +47,11 @@ python3 scripts/match_vacancy.py vacancy.txt --format json
 ```
 
 The matcher is deterministic and offline. It recognizes only configured skills,
-shows unmapped lines and unknown dimensions explicitly, and never follows
-instructions or URLs embedded in vacancy text. See
+shows unmapped lines, unknown dimensions, and unverified experience or location
+constraints explicitly, and never follows instructions or URLs embedded in
+vacancy text. See
 [`docs/manual-vacancy-match-spec.md`](docs/manual-vacancy-match-spec.md).
+
+The first real-vacancy calibration uses eight sanitized, source-attributed Habr
+Career fixtures. Results and known limitations are recorded in
+[`docs/calibration/2026-08-17-habr-baseline.md`](docs/calibration/2026-08-17-habr-baseline.md).
