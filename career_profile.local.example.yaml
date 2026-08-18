@@ -1,0 +1,8 @@
+# Copy to career_profile.local.yaml or pass an explicit --profile path.
+# This file deliberately contains no personal facts.
+schema_version: 1
+profile:
+  commercial_years: null
+  confirmed_production_experience: null
+  current_country_code: null
+  target_seniority: []

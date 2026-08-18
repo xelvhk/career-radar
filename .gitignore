@@ -4,6 +4,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+career_profile.local.yaml
 *.key
 *.pem
 *.egg-info/
