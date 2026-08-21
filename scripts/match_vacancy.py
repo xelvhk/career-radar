@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 
 from career_radar.matching import analyze_vacancy  # noqa: E402
 from career_radar.matching_config import load_matching_config  # noqa: E402
+from career_radar.local_profile import apply_local_profile, load_local_profile  # noqa: E402
 from career_radar.reporting import report_to_json, report_to_markdown  # noqa: E402
 from career_radar.validation import load_yaml  # noqa: E402
 
@@ -25,6 +26,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--format", choices=("markdown", "json"), default="markdown"
     )
+    parser.add_argument(
+        "--profile",
+        type=Path,
+        help="optional local-only career profile YAML file",
+    )
     arguments = parser.parse_args(argv)
 
     try:
@@ -32,6 +38,8 @@ def main(argv: list[str] | None = None) -> int:
         projects = load_yaml(ROOT / "projects.yaml")
         skills = load_yaml(ROOT / "skills.yaml")
         goals = load_yaml(ROOT / "career_goals.yaml")
+        if arguments.profile is not None:
+            goals = apply_local_profile(goals, load_local_profile(arguments.profile))
         config = load_matching_config(ROOT / "matching.yaml", skills, goals)
         report = analyze_vacancy(
             text,
