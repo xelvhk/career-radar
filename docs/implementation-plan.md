@@ -44,7 +44,7 @@ Product direction: [`ideas/hybrid-vacancy-watchlist.md`](ideas/hybrid-vacancy-wa
 
 ### Phase 2A: Local Watchlist Vertical Slice
 
-- [ ] Define saved search profiles generated from verified skills and explicit
+- [x] Define saved search profiles generated from verified skills and explicit
       query exclusions.
 - [ ] Define a normalized collected-vacancy contract with source provenance,
       retrieval time, collection method, and deterministic identity.

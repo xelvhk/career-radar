@@ -17,6 +17,7 @@ pipeline, persistence layer, or UI yet.
 - `scripts/validate_data.py` — local contract and reference validation
 - `scripts/audit_sources.py` — read-only verification against local Git checkouts
 - `matching.yaml` — deterministic RU/EN aliases, weights, and decision thresholds
+- `search_profiles.yaml` — evidence-backed, source-neutral vacancy search plans
 - `scripts/match_vacancy.py` — manual vacancy-to-evidence match report
 
 ## Quick start
@@ -71,3 +72,18 @@ python3 scripts/match_vacancy.py vacancy.txt --profile career_profile.local.yaml
 `career_goals.yaml` or included in matcher output. See
 [`docs/local-profile-spec.md`](docs/local-profile-spec.md) for the restricted
 schema and privacy boundary.
+
+## Inspect saved searches
+
+Generate the structured plans that future source adapters and the local panel
+will consume:
+
+```bash
+python3 scripts/list_search_queries.py
+python3 scripts/list_search_queries.py --format json
+```
+
+The command is offline and read-only. It currently emits eight variants across
+AI Backend, RAG / LLM, Python / FastAPI, and Document AI. Site-specific quoting
+and negation remain the responsibility of each future adapter. See
+[`docs/search-profile-spec.md`](docs/search-profile-spec.md).
