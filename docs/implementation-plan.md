@@ -32,6 +32,8 @@ Verification: `python3 scripts/validate_data.py && python3 -m unittest discover 
       `APPLY`/`REVIEW`/`SKIP` recommendation with explainable weights.
 - [x] Calibrate deterministic extraction against the first eight sanitized real
       vacancies without changing weights or inventing career history.
+- [x] Add an optional private local-profile overlay for explicit career facts,
+      without storing or reporting them in the public catalog.
 
 Acceptance: one pasted vacancy produces a reproducible score breakdown and never
 promotes a pending evidence item as verified.

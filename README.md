@@ -55,3 +55,19 @@ vacancy text. See
 The first real-vacancy calibration uses eight sanitized, source-attributed Habr
 Career fixtures. Results and known limitations are recorded in
 [`docs/calibration/2026-08-17-habr-baseline.md`](docs/calibration/2026-08-17-habr-baseline.md).
+
+## Optional private profile
+
+To resolve mandatory experience, production, location, and seniority constraints
+without putting personal facts in Git, copy the local-only template and pass it
+explicitly:
+
+```bash
+cp career_profile.local.example.yaml career_profile.local.yaml
+python3 scripts/match_vacancy.py vacancy.txt --profile career_profile.local.yaml
+```
+
+`career_profile.local.yaml` is ignored by Git. It is never written back to
+`career_goals.yaml` or included in matcher output. See
+[`docs/local-profile-spec.md`](docs/local-profile-spec.md) for the restricted
+schema and privacy boundary.
