@@ -25,8 +25,9 @@ The compiler resolves each skill ID to the first configured alias in
   "profileId": "rag-llm",
   "targetRoleId": "rag-engineer",
   "titlePhrase": "RAG Engineer",
+  "skillIds": ["python", "rag", "qdrant"],
   "skillTerms": ["python", "rag", "qdrant"],
-  "excludeTerms": ["php", "1c", "bitrix", "wordpress"]
+  "excludeTerms": ["php", "1c", "1с", "bitrix", "wordpress"]
 }
 ```
 

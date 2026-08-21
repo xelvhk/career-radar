@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 
 from career_radar.validation import load_yaml, validate_dataset  # noqa: E402
 from career_radar.matching_config import validate_matching_config  # noqa: E402
+from career_radar.search_profiles import validate_search_profiles  # noqa: E402
 
 
 def main() -> int:
@@ -20,12 +21,16 @@ def main() -> int:
         skills = load_yaml(ROOT / "skills.yaml")
         goals = load_yaml(ROOT / "career_goals.yaml")
         matching = load_yaml(ROOT / "matching.yaml")
+        search_profiles = load_yaml(ROOT / "search_profiles.yaml")
     except ValueError as error:
         print(f"ERROR: {error}")
         return 1
 
     issues = validate_dataset(projects, skills, goals)
     matching_errors = validate_matching_config(matching, skills, goals)
+    search_profile_errors = validate_search_profiles(
+        search_profiles, skills, goals, matching
+    )
     if issues:
         for issue in issues:
             print(f"ERROR {issue.path}: {issue.message}")
@@ -36,13 +41,22 @@ def main() -> int:
             print(f"ERROR matching: {error}")
         print(f"Validation failed with {len(matching_errors)} matching issue(s).")
         return 1
+    if search_profile_errors:
+        for error in search_profile_errors:
+            print(f"ERROR search profiles: {error}")
+        print(
+            "Validation failed with "
+            f"{len(search_profile_errors)} search profile issue(s)."
+        )
+        return 1
 
     project_count = len(projects["projects"])
     skill_count = len(skills["skills"])
     alias_count = len(matching["skill_aliases"])
+    search_profile_count = len(search_profiles["search_profiles"])
     print(
         f"Career data is valid: {project_count} projects, {skill_count} skills, "
-        f"{alias_count} matching profiles."
+        f"{alias_count} matching profiles, {search_profile_count} search profiles."
     )
     return 0
 

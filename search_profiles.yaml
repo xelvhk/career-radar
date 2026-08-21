@@ -1,0 +1,45 @@
+schema_version: 1
+search_profiles:
+  - id: ai-backend
+    name: AI Backend
+    target_role_id: ai-backend-engineer
+    enabled: true
+    exclude_terms: [php, 1c, 1с, bitrix, wordpress]
+    variants:
+      - title_phrase: AI Backend Engineer
+        skill_ids: [python, fastapi, api-security]
+      - title_phrase: Backend Platform Engineer
+        skill_ids: [python, fastapi, postgresql]
+
+  - id: rag-llm
+    name: RAG / LLM Engineer
+    target_role_id: rag-engineer
+    enabled: true
+    exclude_terms: [php, 1c, 1с, bitrix, wordpress]
+    variants:
+      - title_phrase: RAG Engineer
+        skill_ids: [python, rag, qdrant]
+      - title_phrase: LLM Engineer
+        skill_ids: [python, rag, reranking]
+
+  - id: python-fastapi
+    name: Python / FastAPI
+    target_role_id: ai-backend-engineer
+    enabled: true
+    exclude_terms: [php, 1c, 1с, bitrix, wordpress]
+    variants:
+      - title_phrase: Python Backend Developer
+        skill_ids: [python, fastapi, postgresql]
+      - title_phrase: FastAPI Developer
+        skill_ids: [python, fastapi, rest-api]
+
+  - id: document-ai
+    name: Document AI
+    target_role_id: ai-solutions-engineer
+    enabled: true
+    exclude_terms: [php, 1c, 1с, bitrix, wordpress]
+    variants:
+      - title_phrase: Document AI Engineer
+        skill_ids: [python, rag, hybrid-search]
+      - title_phrase: Document AI Solutions Engineer
+        skill_ids: [python, rag, external-integrations]
