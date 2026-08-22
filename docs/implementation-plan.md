@@ -48,11 +48,11 @@ Product direction: [`ideas/hybrid-vacancy-watchlist.md`](ideas/hybrid-vacancy-wa
       query exclusions.
 - [x] Define a normalized collected-vacancy contract with source provenance,
       retrieval time, collection method, and deterministic identity.
-- [ ] Select local persistence only after documenting inbox, deduplication, and
+- [x] Select local persistence only after documenting inbox, deduplication, and
       privacy requirements.
 - [ ] Add a local panel with one `Scan vacancies` action, per-source progress,
       and isolated failure visibility.
-- [ ] Route normalized vacancies through the existing matcher into an Opportunity
+- [x] Route normalized vacancies through the existing matcher into an Opportunity
       Inbox ranked by `APPLY`, `REVIEW`, and `SKIP`.
 
 Acceptance: one manual scan produces a persistent, deduplicated, explainable inbox

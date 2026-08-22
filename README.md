@@ -5,8 +5,8 @@ turn verifiable project work into vacancy matches, application arguments, and a
 market-driven learning roadmap without inventing experience.
 
 The repository combines the data foundation in [`docs/spec.md`](docs/spec.md)
-with a deterministic manual matching slice. There is no vacancy scraper, LLM
-pipeline, persistence layer, or UI yet.
+with deterministic manual matching and a private local Opportunity Inbox. There
+is no vacancy scraper, LLM pipeline, or UI yet.
 
 ## Current scope
 
@@ -20,7 +20,9 @@ pipeline, persistence layer, or UI yet.
 - `search_profiles.yaml` — evidence-backed, source-neutral vacancy search plans
 - `career_radar/collected_vacancy.py` — normalized collector provenance and
   deterministic vacancy identity contract
+- `career_radar/opportunity_store.py` — transactional local SQLite inbox
 - `scripts/match_vacancy.py` — manual vacancy-to-evidence match report
+- `scripts/inbox.py` — persistent manual import, ranking, review, and status CLI
 
 ## Quick start
 
@@ -89,3 +91,29 @@ The command is offline and read-only. It currently emits eight variants across
 AI Backend, RAG / LLM, Python / FastAPI, and Document AI. Site-specific quoting
 and negation remain the responsibility of each future adapter. See
 [`docs/search-profile-spec.md`](docs/search-profile-spec.md).
+
+## Use the local Opportunity Inbox
+
+Import and match a vacancy into the private local SQLite inbox:
+
+```bash
+python3 scripts/inbox.py import vacancy.txt \
+  --source manual \
+  --source-url https://example.com/vacancy/123 \
+  --profile career_profile.local.yaml
+```
+
+Review the ranked queue and record a human decision independently from the
+matcher recommendation:
+
+```bash
+python3 scripts/inbox.py list --recommendation APPLY --status new
+python3 scripts/inbox.py show VACANCY_ID
+python3 scripts/inbox.py set-status VACANCY_ID shortlisted
+```
+
+The default `career_radar.local.sqlite3` database is ignored by Git and created
+with private permissions on POSIX. Full vacancy text stays inside that local
+database and is omitted from CLI JSON/Markdown output. Use `--db PATH` on any
+command to select another local database. See
+[`docs/opportunity-inbox-spec.md`](docs/opportunity-inbox-spec.md).
