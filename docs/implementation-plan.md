@@ -46,7 +46,7 @@ Product direction: [`ideas/hybrid-vacancy-watchlist.md`](ideas/hybrid-vacancy-wa
 
 - [x] Define saved search profiles generated from verified skills and explicit
       query exclusions.
-- [ ] Define a normalized collected-vacancy contract with source provenance,
+- [x] Define a normalized collected-vacancy contract with source provenance,
       retrieval time, collection method, and deterministic identity.
 - [ ] Select local persistence only after documenting inbox, deduplication, and
       privacy requirements.

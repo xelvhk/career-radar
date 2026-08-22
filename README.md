@@ -18,6 +18,8 @@ pipeline, persistence layer, or UI yet.
 - `scripts/audit_sources.py` — read-only verification against local Git checkouts
 - `matching.yaml` — deterministic RU/EN aliases, weights, and decision thresholds
 - `search_profiles.yaml` — evidence-backed, source-neutral vacancy search plans
+- `career_radar/collected_vacancy.py` — normalized collector provenance and
+  deterministic vacancy identity contract
 - `scripts/match_vacancy.py` — manual vacancy-to-evidence match report
 
 ## Quick start

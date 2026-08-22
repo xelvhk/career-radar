@@ -39,9 +39,10 @@ Identity uses the first available key in this order:
 2. `source` plus canonical `source_url`;
 3. `source` plus normalized title and description, only for `manual_text`.
 
-The identity key begins with `collected-vacancy:v1`, then is hashed with
-SHA-256. Retrieval time and collection method are deliberately excluded, so a
-later observation of the same source vacancy keeps the same ID. When a native
+The identity components begin with `collected-vacancy:v1`, are encoded as a
+compact UTF-8 JSON array with non-ASCII characters preserved, and are then hashed
+with SHA-256. Retrieval time and collection method are deliberately excluded, so
+a later observation of the same source vacancy keeps the same ID. When a native
 source ID exists it takes precedence over URL changes. Content fallback collapses
 whitespace and case-folds text before hashing.
 
