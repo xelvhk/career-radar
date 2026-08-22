@@ -207,6 +207,20 @@ class InboxCliTests(unittest.TestCase):
         self.assertIn("schema version 99 is not supported", result.stderr)
         self.assertNotIn(str(database), result.stderr)
 
+    def test_unknown_vacancy_id_returns_a_stable_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "inbox.sqlite3"
+            result = self._run(
+                "show",
+                "vac-" + "0" * 64,
+                "--db",
+                str(database),
+            )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("opportunity was not found", result.stderr)
+        self.assertNotIn(str(database), result.stderr)
+
     def _run(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, "scripts/inbox.py", *arguments],

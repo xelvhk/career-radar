@@ -205,6 +205,23 @@ class OpportunityStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "database path must not be a symlink"):
             OpportunityStore(link)
 
+    def test_rejects_corrupt_or_incomplete_version_one_databases(self) -> None:
+        corrupt = Path(self.directory.name) / "corrupt.sqlite3"
+        corrupt.write_bytes(b"not-a-sqlite-database")
+        with self.assertRaisesRegex(
+            ValueError, "opportunity database is invalid or cannot be read"
+        ):
+            OpportunityStore(corrupt)
+
+        incomplete = Path(self.directory.name) / "incomplete.sqlite3"
+        with closing(sqlite3.connect(incomplete)) as connection, connection:
+            connection.execute("CREATE TABLE opportunities (vacancy_id TEXT)")
+            connection.execute("PRAGMA user_version = 1")
+        with self.assertRaisesRegex(
+            ValueError, "opportunity schema version 1 is incomplete"
+        ):
+            OpportunityStore(incomplete)
+
     def _vacancy(self, **changes: object):
         values: dict[str, object] = {
             "source": "hh",
