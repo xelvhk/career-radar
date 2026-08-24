@@ -5,8 +5,8 @@ turn verifiable project work into vacancy matches, application arguments, and a
 market-driven learning roadmap without inventing experience.
 
 The repository combines the data foundation in [`docs/spec.md`](docs/spec.md)
-with deterministic manual matching and a private local Opportunity Inbox. There
-is no vacancy scraper, LLM pipeline, or UI yet.
+with deterministic manual matching and a private local Opportunity Inbox with a
+browser panel. There is no vacancy scraper or LLM pipeline yet.
 
 ## Current scope
 
@@ -21,8 +21,10 @@ is no vacancy scraper, LLM pipeline, or UI yet.
 - `career_radar/collected_vacancy.py` — normalized collector provenance and
   deterministic vacancy identity contract
 - `career_radar/opportunity_store.py` — transactional local SQLite inbox
+- `career_radar/panel.py` — loopback-only API for the local browser panel
 - `scripts/match_vacancy.py` — manual vacancy-to-evidence match report
 - `scripts/inbox.py` — persistent manual import, ranking, review, and status CLI
+- `scripts/run_panel.py` — local Opportunity Inbox web panel
 
 ## Quick start
 
@@ -117,3 +119,24 @@ with private permissions on POSIX. Full vacancy text stays inside that local
 database and is omitted from CLI JSON/Markdown output. Use `--db PATH` on any
 command to select another local database. See
 [`docs/opportunity-inbox-spec.md`](docs/opportunity-inbox-spec.md).
+
+## Open the local web panel
+
+Install the web runtime, then start the loopback-only server:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e '.[test]'
+.venv/bin/python scripts/run_panel.py \
+  --profile career_profile.local.yaml
+```
+
+Open `http://127.0.0.1:8765`. The panel supports manual vacancy paste, ranked
+Inbox filters, evidence/gap review, provenance, and independent
+`new`/`shortlisted`/`dismissed` decisions. Full vacancy text remains in the
+ignored local SQLite database and is never returned by the browser API.
+
+`Scan vacancies` is intentionally disabled until the first source adapter is
+implemented after official HeadHunter API/terms research. The panel loads no
+remote scripts, fonts, analytics, or vacancy sources. See
+[`docs/local-web-panel-spec.md`](docs/local-web-panel-spec.md).

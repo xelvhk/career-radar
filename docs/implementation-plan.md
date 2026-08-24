@@ -50,8 +50,8 @@ Product direction: [`ideas/hybrid-vacancy-watchlist.md`](ideas/hybrid-vacancy-wa
       retrieval time, collection method, and deterministic identity.
 - [x] Select local persistence only after documenting inbox, deduplication, and
       privacy requirements.
-- [ ] Add a local panel with one `Scan vacancies` action, per-source progress,
-      and isolated failure visibility.
+- [x] Add a local panel for manual import, ranked review, evidence/gaps,
+      provenance, and independent human status.
 - [x] Route normalized vacancies through the existing matcher into an Opportunity
       Inbox ranked by `APPLY`, `REVIEW`, and `SKIP`.
 
@@ -63,6 +63,8 @@ without storing credentials or changing evidence-disclosure rules.
 - [ ] Research current terms, official APIs, authentication boundaries, and rate
       limits before implementing each source.
 - [ ] Implement HeadHunter as the first production-quality adapter.
+- [ ] Enable the panel's `Scan vacancies` action with per-source progress and
+      isolated failure visibility after the first adapter exists.
 - [ ] Preserve manual URL or text import as the universal fallback.
 - [ ] Add Habr Career after the adapter contract and failure modes are proven.
 - [ ] Add LinkedIn and Indeed sequentially, using an explicitly authorized browser
