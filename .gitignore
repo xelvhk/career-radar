@@ -1,5 +1,6 @@
 __pycache__/
 .pytest_cache/
+.playwright-cli/
 .venv/
 .env
 .env.*
@@ -11,4 +12,5 @@ career_radar.local.sqlite3*
 *.egg-info/
 dist/
 build/
+output/playwright/
 .DS_Store

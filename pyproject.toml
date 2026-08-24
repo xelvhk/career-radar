@@ -7,7 +7,17 @@ name = "career-radar"
 version = "0.1.0"
 description = "Evidence-first career intelligence data foundation"
 requires-python = ">=3.11"
-dependencies = ["PyYAML>=6.0,<7"]
+dependencies = [
+  "FastAPI>=0.116,<1",
+  "PyYAML>=6.0,<7",
+  "uvicorn>=0.35,<1",
+]
+
+[project.optional-dependencies]
+test = ["httpx2>=2.12,<3"]
 
 [tool.setuptools.packages.find]
 include = ["career_radar*"]
+
+[tool.setuptools.package-data]
+career_radar = ["web/*.html", "web/*.css", "web/*.js"]

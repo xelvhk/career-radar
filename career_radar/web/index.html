@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#f4f2ec">
+    <title>Career Radar — Opportunity Inbox</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23163b4b'/%3E%3Ctext x='32' y='38' text-anchor='middle' font-family='Arial' font-size='18' font-weight='700' fill='white'%3ECR%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/app.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to Inbox</a>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Career Radar home">
+        <span class="brand-mark" aria-hidden="true">CR</span>
+        <span><strong>Career Radar</strong><small>Opportunity Inbox</small></span>
+      </a>
+      <div class="top-actions">
+        <span class="local-status"><span aria-hidden="true"></span>Local only</span>
+        <button class="button button-ghost" type="button" disabled title="Source adapters are the next roadmap slice">Scan vacancies</button>
+        <button class="button button-primary" id="open-import" type="button">Add vacancy</button>
+      </div>
+    </header>
+
+    <main id="workspace" class="page-shell">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Manual opportunity desk</p>
+          <h1 id="page-title">Decide where to apply.</h1>
+          <p>Evidence-backed matches, private on this device. Algorithmic recommendations stay separate from your decisions.</p>
+        </div>
+        <dl class="summary" aria-label="Inbox summary">
+          <div><dt>Showing</dt><dd id="count-all">0</dd></div>
+          <div><dt>Apply</dt><dd id="count-apply">0</dd></div>
+          <div><dt>Review</dt><dd id="count-review">0</dd></div>
+          <div><dt>Shortlisted</dt><dd id="count-shortlisted">0</dd></div>
+        </dl>
+      </section>
+
+      <section class="toolbar" aria-label="Inbox filters">
+        <div class="filter-group">
+          <label for="recommendation-filter">Recommendation</label>
+          <select id="recommendation-filter">
+            <option value="">All recommendations</option>
+            <option value="APPLY">Apply</option>
+            <option value="REVIEW">Review</option>
+            <option value="SKIP">Skip</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="status-filter">My status</label>
+          <select id="status-filter">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="shortlisted">Shortlisted</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+        </div>
+        <button class="icon-button" id="refresh" type="button" aria-label="Refresh Inbox" title="Refresh Inbox">↻</button>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="inbox-pane" aria-labelledby="inbox-heading">
+          <div class="pane-heading">
+            <div><p class="eyebrow">Ranked queue</p><h2 id="inbox-heading">Opportunities</h2></div>
+            <span id="visible-count" class="count-pill">0 roles</span>
+          </div>
+          <div id="list-loading" class="loading-state" role="status">Loading Inbox…</div>
+          <div id="empty-state" class="empty-state" hidden>
+            <span class="empty-radar" aria-hidden="true"></span>
+            <h3>No opportunities yet</h3>
+            <p>Paste a vacancy to get an explained match and start your private queue.</p>
+            <button class="button button-primary" id="empty-import" type="button">Add first vacancy</button>
+          </div>
+          <ol id="opportunity-list" class="opportunity-list" aria-label="Ranked opportunities"></ol>
+        </section>
+
+        <section class="detail-pane" id="detail-pane" aria-label="Opportunity details">
+          <div id="detail-placeholder" class="detail-placeholder">
+            <p class="eyebrow">Evidence review</p>
+            <h2 id="detail-heading">Select an opportunity</h2>
+            <p>Open a role to inspect its score, evidence coverage, gaps, and provenance.</p>
+          </div>
+          <article id="opportunity-detail" hidden></article>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="import-dialog" aria-labelledby="import-title">
+      <form id="import-form" method="dialog">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Manual import</p><h2 id="import-title">Add a vacancy</h2></div>
+          <button class="close-button" id="close-import" type="button" aria-label="Close">×</button>
+        </div>
+        <p class="dialog-intro">The first non-empty line becomes the role title. Full text stays only in the local SQLite database.</p>
+        <label for="vacancy-text">Vacancy text <span>required</span></label>
+        <textarea id="vacancy-text" name="text" rows="12" maxlength="200300" required placeholder="AI Backend Engineer&#10;&#10;Requirements:&#10;— Python and FastAPI&#10;— PostgreSQL and Docker"></textarea>
+        <div class="form-grid">
+          <div>
+            <label for="source-url">Source URL <span>optional, HTTPS</span></label>
+            <input id="source-url" name="sourceUrl" type="url" inputmode="url" placeholder="https://example.com/vacancy/123">
+          </div>
+          <div>
+            <label for="source-id">Source vacancy ID <span>optional</span></label>
+            <input id="source-id" name="sourceVacancyId" type="text" maxlength="300" autocomplete="off" placeholder="123">
+          </div>
+        </div>
+        <p id="import-error" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button class="button button-ghost" id="cancel-import" type="button">Cancel</button>
+          <button class="button button-primary" id="submit-import" type="submit">Match and save</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
