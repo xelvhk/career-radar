@@ -12,13 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from career_radar.collected_vacancy import (  # noqa: E402
-    CollectedVacancyInput,
-    normalize_collected_vacancy,
-)
-from career_radar.local_profile import apply_local_profile, load_local_profile  # noqa: E402
-from career_radar.matching import analyze_vacancy  # noqa: E402
-from career_radar.matching_config import load_matching_config  # noqa: E402
+from career_radar.opportunity_service import OpportunityImporter  # noqa: E402
 from career_radar.opportunity_reporting import (  # noqa: E402
     import_result_to_json,
     import_result_to_markdown,
@@ -28,7 +22,6 @@ from career_radar.opportunity_reporting import (  # noqa: E402
     opportunity_to_markdown,
 )
 from career_radar.opportunity_store import OpportunityStore  # noqa: E402
-from career_radar.validation import load_yaml  # noqa: E402
 
 
 DEFAULT_DATABASE = ROOT / "career_radar.local.sqlite3"
@@ -125,36 +118,16 @@ def _dispatch(arguments: argparse.Namespace) -> str:
 
 def _import(arguments: argparse.Namespace) -> str:
     text = _read_vacancy(arguments.vacancy)
-    projects = load_yaml(ROOT / "projects.yaml")
-    skills = load_yaml(ROOT / "skills.yaml")
-    goals = load_yaml(ROOT / "career_goals.yaml")
-    if arguments.profile is not None:
-        goals = apply_local_profile(goals, load_local_profile(arguments.profile))
-    config = load_matching_config(ROOT / "matching.yaml", skills, goals)
-
     retrieved_at = _retrieved_at(arguments.retrieved_at)
-    collection_method = "manual_url" if arguments.source_url else "manual_text"
-    title, description = _split_vacancy(text)
-    vacancy = normalize_collected_vacancy(
-        CollectedVacancyInput(
-            source=arguments.source,
-            source_vacancy_id=arguments.source_id,
-            source_url=arguments.source_url,
-            retrieved_at=retrieved_at,
-            collection_method=collection_method,
-            title=title,
-            description=description,
-        )
-    )
-    report = analyze_vacancy(
-        vacancy.matcher_text,
-        projects_data=projects,
-        skills_data=skills,
-        goals_data=goals,
-        config=config,
-    )
-    result = OpportunityStore(arguments.db).upsert(
-        vacancy, report, datetime.now(timezone.utc)
+    result = OpportunityImporter(
+        ROOT, arguments.db, profile=arguments.profile
+    ).import_text(
+        text,
+        source=arguments.source,
+        source_vacancy_id=arguments.source_id,
+        source_url=arguments.source_url,
+        retrieved_at=retrieved_at,
+        matched_at=datetime.now(timezone.utc),
     )
     return (
         import_result_to_json(result)
@@ -177,20 +150,6 @@ def _read_vacancy(path: Path) -> str:
         return raw.decode("utf-8")
     except UnicodeDecodeError as error:
         raise ValueError("vacancy file must be UTF-8") from error
-
-
-def _split_vacancy(text: str) -> tuple[str, str]:
-    lines = text.splitlines()
-    title_index = next(
-        (index for index, line in enumerate(lines) if line.strip()), None
-    )
-    if title_index is None:
-        raise ValueError("vacancy text is empty")
-    title = lines[title_index].strip()
-    description = "\n".join(lines[title_index + 1 :]).strip()
-    if not description:
-        raise ValueError("vacancy description is empty")
-    return title, description
 
 
 def _retrieved_at(value: str | None) -> datetime:
