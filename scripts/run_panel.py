@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the local Opportunity Inbox panel.")
     parser.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
     parser.add_argument("--profile", type=Path)
+    parser.add_argument("--hh-config", type=Path, default=ROOT / "hh_source.local.yaml")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=_port, default=8765)
     arguments = parser.parse_args(argv)
@@ -33,6 +34,7 @@ def main(argv: list[str] | None = None) -> int:
             db_path=arguments.db,
             root=ROOT,
             profile_path=arguments.profile,
+            hh_config_path=arguments.hh_config,
         )
     except ValueError as error:
         print(f"ERROR: {error}", file=sys.stderr)

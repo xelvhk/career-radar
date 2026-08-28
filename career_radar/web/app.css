@@ -71,6 +71,11 @@ select, input { min-height: 40px; padding: 8px 11px; }
 textarea { display: block; resize: vertical; padding: 12px; line-height: 1.5; }
 .icon-button { width: 40px; height: 40px; border: 1px solid var(--line-strong); border-radius: 7px; background: transparent; color: var(--navy); font-size: 21px; }
 .icon-button:hover { background: #eef0ec; }
+.scan-button { min-width: 132px; }
+.source-status { margin: -4px 2px 14px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.source-status[data-state="completed"] { color: var(--apply); }
+.source-status[data-state="partial"], .source-status[data-state="blocked"] { color: var(--review); }
+.source-status[data-state="failed"] { color: var(--skip); }
 
 .workspace-grid { display: grid; grid-template-columns: minmax(320px, .78fr) minmax(520px, 1.22fr); min-height: 650px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
 .inbox-pane { min-width: 0; border-right: 1px solid var(--line); background: #faf9f5; }
@@ -154,11 +159,12 @@ dialog label span { float: right; font-weight: 500; letter-spacing: 0; }
   .summary { margin-top: 25px; }
   .workspace-grid { grid-template-columns: minmax(280px, .9fr) minmax(420px, 1.1fr); }
   .detail-content { padding: 28px; }
+  .toolbar { flex-wrap: wrap; }
 }
 
 @media (max-width: 760px) {
   .topbar { height: auto; min-height: 68px; padding: 12px 18px; }
-  .local-status, .button-ghost { display: none; }
+  .local-status { display: none; }
   .page-shell { padding-top: 28px; }
   h1 { font-size: 43px; }
   .summary { grid-template-columns: repeat(2, 1fr); }
@@ -166,6 +172,7 @@ dialog label span { float: right; font-weight: 500; letter-spacing: 0; }
   .summary div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .toolbar { align-items: stretch; }
   .filter-group { flex: 1; min-width: 0; }
+  .scan-button { align-self: end; }
   .workspace-grid { display: block; min-height: 0; }
   .inbox-pane { border-right: 0; }
   .detail-pane { border-top: 1px solid var(--line); }
@@ -183,7 +190,8 @@ dialog label span { float: right; font-weight: 500; letter-spacing: 0; }
   .intro > div > p:last-child { font-size: 14px; }
   .toolbar { display: grid; grid-template-columns: 1fr 1fr; }
   .filter-group { min-width: 0; }
-  .toolbar .icon-button { grid-column: 1 / -1; width: 100%; }
+  .scan-profile-group { grid-column: 1 / -1; }
+  .scan-button { min-width: 0; }
   .pane-heading { min-height: 78px; padding: 17px; }
   .opportunity-card button { padding: 17px; }
   .detail-content { padding: 22px 17px; }

@@ -16,6 +16,23 @@ MUTATION_HEADERS = {
 }
 
 
+class FakeHeadHunterTransport:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def get_json(self, path, parameters, user_agent):
+        self.calls.append((path, parameters, user_agent))
+        if path == "/vacancies":
+            return {"items": [{"id": "73001"}]}
+        return {
+            "id": "73001",
+            "name": "Python FastAPI Engineer",
+            "archived": False,
+            "alternate_url": "https://hh.ru/vacancy/73001",
+            "description": "Python, FastAPI, PostgreSQL and Docker",
+        }
+
+
 class PanelApiTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
@@ -93,6 +110,55 @@ class PanelApiTests(unittest.TestCase):
         self.assertEqual(missing.status_code, 403)
         self.assertEqual(foreign.status_code, 403)
         self.assertEqual(missing.json()["error"]["code"], "FORBIDDEN")
+
+    def test_source_is_blocked_without_local_registration_config(self) -> None:
+        sources = self.client.get("/api/sources")
+        scan = self.client.post(
+            "/api/scans",
+            headers=MUTATION_HEADERS,
+            json={"profileId": "python-fastapi"},
+        )
+
+        self.assertEqual(sources.status_code, 200)
+        self.assertEqual(sources.json()["sources"][0]["status"], "blocked")
+        self.assertEqual(scan.status_code, 200)
+        self.assertEqual(scan.json()["scan"]["status"], "blocked")
+        self.assertNotIn(str(ROOT), scan.text)
+
+    def test_configured_scan_imports_without_returning_full_description(self) -> None:
+        config = Path(self.temporary_directory.name) / "hh.local.yaml"
+        config.write_text(
+            "schema_version: 1\nsource:\n  enabled: true\n"
+            "  registered_application: true\n"
+            "  user_agent: CareerRadar/0.1 (contact@example.com)\n",
+            encoding="utf-8",
+        )
+        transport = FakeHeadHunterTransport()
+        client = TestClient(
+            create_app(
+                db_path=self.database,
+                root=ROOT,
+                hh_config_path=config,
+                hh_transport=transport,
+            ),
+            base_url="http://127.0.0.1",
+        )
+        try:
+            response = client.post(
+                "/api/scans",
+                headers=MUTATION_HEADERS,
+                json={"profileId": "python-fastapi"},
+            )
+            inbox = client.get("/api/opportunities")
+        finally:
+            client.close()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["scan"]["status"], "completed")
+        self.assertEqual(response.json()["scan"]["sources"][0]["createdCount"], 1)
+        self.assertNotIn("PostgreSQL and Docker", response.text)
+        self.assertEqual(inbox.json()["opportunityCount"], 1)
+        self.assertEqual(len(transport.calls), 4)
 
     def test_private_profile_values_never_enter_api_or_database(self) -> None:
         profile = Path(self.temporary_directory.name) / "career_profile.local.yaml"

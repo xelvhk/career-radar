@@ -14,6 +14,9 @@ const elements = {
   formError: document.querySelector("#import-error"),
   submit: document.querySelector("#submit-import"),
   live: document.querySelector("#live-region"),
+  scanProfile: document.querySelector("#scan-profile"),
+  scanButton: document.querySelector("#scan-vacancies"),
+  sourceStatus: document.querySelector("#source-status"),
 };
 
 const text = (tag, value, className) => {
@@ -62,6 +65,53 @@ const loadInbox = async ({ selectFirst = false } = {}) => {
     elements.list.replaceChildren(text("li", "Inbox is unavailable. Use refresh to try again.", "loading-state"));
   } finally {
     elements.loading.hidden = true;
+  }
+};
+
+const loadSources = async () => {
+  try {
+    const payload = await api("/api/sources");
+    elements.scanProfile.replaceChildren();
+    payload.profiles.forEach((profile) => {
+      const option = document.createElement("option");
+      option.value = profile.id;
+      option.textContent = profile.name;
+      elements.scanProfile.append(option);
+    });
+    const source = payload.sources[0];
+    elements.sourceStatus.textContent = source.message;
+    elements.sourceStatus.dataset.state = source.status;
+    elements.scanButton.disabled = payload.profiles.length === 0;
+  } catch (error) {
+    elements.scanButton.disabled = true;
+    elements.sourceStatus.textContent = error.message;
+    elements.sourceStatus.dataset.state = "failed";
+  }
+};
+
+const scanVacancies = async () => {
+  elements.scanButton.disabled = true;
+  elements.scanButton.textContent = "Scanning…";
+  elements.sourceStatus.textContent = "Scanning HeadHunter. Vacancy details stay on this device…";
+  elements.sourceStatus.dataset.state = "running";
+  try {
+    const payload = await api("/api/scans", {
+      method: "POST",
+      headers: mutationHeaders(),
+      body: JSON.stringify({ profileId: elements.scanProfile.value }),
+    });
+    const source = payload.scan.sources[0];
+    elements.sourceStatus.textContent = `${source.message}. ${source.importedCount} imported, ${source.skippedCount} skipped.`;
+    elements.sourceStatus.dataset.state = source.status;
+    await loadInbox({ selectFirst: source.importedCount > 0 });
+    announce(elements.sourceStatus.textContent);
+  } catch (error) {
+    elements.sourceStatus.textContent = error.message;
+    elements.sourceStatus.dataset.state = "failed";
+    announce(error.message);
+  } finally {
+    elements.scanButton.disabled = false;
+    elements.scanButton.textContent = "Scan vacancies";
   }
 };
 
@@ -277,9 +327,10 @@ document.querySelector("#empty-import").addEventListener("click", openDialog);
 document.querySelector("#close-import").addEventListener("click", () => elements.dialog.close());
 document.querySelector("#cancel-import").addEventListener("click", () => elements.dialog.close());
 document.querySelector("#refresh").addEventListener("click", () => loadInbox());
+elements.scanButton.addEventListener("click", scanVacancies);
 elements.recommendation.addEventListener("change", () => loadInbox({ selectFirst: true }));
 elements.status.addEventListener("change", () => loadInbox({ selectFirst: true }));
 elements.form.addEventListener("submit", submitImport);
 elements.dialog.addEventListener("click", (event) => { if (event.target === elements.dialog) elements.dialog.close(); });
 
-loadInbox({ selectFirst: true });
+Promise.all([loadSources(), loadInbox({ selectFirst: true })]);

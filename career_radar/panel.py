@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from .opportunity_reporting import opportunity_to_dict
 from .opportunity_service import OpportunityImporter
 from .opportunity_store import OpportunityStore
+from .hh_source import HeadHunterAdapter, JsonTransport, SourceBlockedError, load_hh_config
+from .scan_service import ScanService
 
 
 PANEL_VERSION = 1
@@ -50,16 +52,34 @@ class StatusRequest(BaseModel):
     status: Literal["new", "shortlisted", "dismissed"]
 
 
+class ScanRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    profile_id: str = Field(alias="profileId", min_length=1, max_length=100)
+
+
 def create_app(
     *,
     db_path: Path | str,
     root: Path,
     profile_path: Path | None = None,
+    hh_config_path: Path | None = None,
+    hh_transport: JsonTransport | None = None,
 ) -> FastAPI:
     """Create a loopback-only panel application around one local store."""
     web_root = Path(__file__).resolve().parent / "web"
     store = OpportunityStore(db_path)
     importer = OpportunityImporter(root, db_path, profile=profile_path)
+    try:
+        hh_config = load_hh_config(hh_config_path or root / "hh_source.local.yaml")
+        hh_adapter = HeadHunterAdapter(hh_config, transport=hh_transport)
+        hh_blocked_message = None
+    except SourceBlockedError as error:
+        hh_adapter = None
+        hh_blocked_message = str(error)
+    scanner = ScanService(
+        root, importer, hh_adapter, blocked_message=hh_blocked_message
+    )
     app = FastAPI(
         title="Career Radar Local Panel",
         version=str(PANEL_VERSION),
@@ -135,6 +155,29 @@ def create_app(
                 for item in opportunities
             ],
         }
+
+    @app.get("/api/sources")
+    def list_sources() -> dict[str, object]:
+        configured = scanner.adapter is not None
+        return {
+            "panelVersion": PANEL_VERSION,
+            "profiles": list(scanner.profiles),
+            "sources": [
+                {
+                    "source": "hh",
+                    "status": "ready" if configured else "blocked",
+                    "message": (
+                        "HeadHunter is ready for a manual scan"
+                        if configured
+                        else scanner.blocked_message
+                    ),
+                }
+            ],
+        }
+
+    @app.post("/api/scans")
+    def scan_sources(payload: ScanRequest) -> dict[str, object]:
+        return {"panelVersion": PANEL_VERSION, "scan": scanner.scan(payload.profile_id).to_dict()}
 
     @app.get("/api/opportunities/{vacancy_id}")
     def get_opportunity(vacancy_id: str) -> dict[str, object]:

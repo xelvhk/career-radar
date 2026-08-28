@@ -19,7 +19,6 @@
       </a>
       <div class="top-actions">
         <span class="local-status"><span aria-hidden="true"></span>Local only</span>
-        <button class="button button-ghost" type="button" disabled title="Source adapters are the next roadmap slice">Scan vacancies</button>
         <button class="button button-primary" id="open-import" type="button">Add vacancy</button>
       </div>
     </header>
@@ -58,8 +57,14 @@
             <option value="dismissed">Dismissed</option>
           </select>
         </div>
+        <div class="filter-group scan-profile-group">
+          <label for="scan-profile">Search profile</label>
+          <select id="scan-profile" aria-describedby="source-status"></select>
+        </div>
+        <button class="button button-ghost scan-button" id="scan-vacancies" type="button">Scan vacancies</button>
         <button class="icon-button" id="refresh" type="button" aria-label="Refresh Inbox" title="Refresh Inbox">↻</button>
       </section>
+      <p id="source-status" class="source-status" role="status">Loading source status…</p>
 
       <div class="workspace-grid">
         <section class="inbox-pane" aria-labelledby="inbox-heading">
