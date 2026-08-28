@@ -60,12 +60,12 @@ without storing credentials or changing evidence-disclosure rules.
 
 ### Phase 2B: Source Adapters
 
-- [ ] Research current terms, official APIs, authentication boundaries, and rate
+- [x] Research current terms, official APIs, authentication boundaries, and rate
       limits before implementing each source.
-- [ ] Implement HeadHunter as the first production-quality adapter.
-- [ ] Enable the panel's `Scan vacancies` action with per-source progress and
+- [x] Implement HeadHunter as the first production-quality adapter.
+- [x] Enable the panel's `Scan vacancies` action with per-source progress and
       isolated failure visibility after the first adapter exists.
-- [ ] Preserve manual URL or text import as the universal fallback.
+- [x] Preserve manual URL or text import as the universal fallback.
 - [ ] Add Habr Career after the adapter contract and failure modes are proven.
 - [ ] Add LinkedIn and Indeed sequentially, using an explicitly authorized browser
       session only where permitted and necessary.

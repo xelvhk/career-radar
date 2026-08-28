@@ -3,13 +3,12 @@
 ## Goal
 
 The local web panel is a thin browser surface over the existing
-`OpportunityStore`. It completes the manual workflow without adding collection
-adapters: paste a vacancy, match and persist it, review the explained ranking,
-then record a human inbox status.
+`OpportunityStore`. It supports manual import and an explicitly initiated scan
+through the researched official HeadHunter adapter: collect, match, persist,
+review the explained ranking, then record a human inbox status.
 
-The panel is not a network collector, scheduler, application CRM, or document
-generator. `Scan vacancies` remains disabled until at least one researched
-source adapter exists; manual paste is the only ingestion action in this slice.
+The panel is not a scheduler, application CRM, or document generator. Manual
+paste remains the universal offline fallback.
 
 ## Runtime boundary
 
@@ -17,8 +16,9 @@ source adapter exists; manual paste is the only ingestion action in this slice.
 - The default database remains `career_radar.local.sqlite3`; `--db` selects a
   different local file and `--profile` applies the existing private overlay at
   match time.
-- HTML, CSS, and JavaScript are repository-owned static assets. The panel makes
-  no external requests and loads no remote fonts, scripts, or analytics.
+- HTML, CSS, and JavaScript are repository-owned static assets. The browser
+  loads no remote fonts, scripts, analytics, or vacancy sources. Only the local
+  server can call the fixed official HH API origin after configuration.
 - The browser API never returns the stored vacancy description or private
   profile values. It returns the existing versioned match snapshot only.
 - Mutating requests require the same local origin and the
@@ -41,6 +41,7 @@ tracebacks:
 ```text
 GET /api/opportunities?recommendation=APPLY&status=new&limit=20
 GET /api/opportunities/{vacancy_id}
+GET /api/sources
 ```
 
 The list follows the store's stable ordering: `APPLY`, `REVIEW`, `SKIP`, then
@@ -52,6 +53,7 @@ mapping, reasons, gaps, confidence, provenance, and the human status.
 ```text
 POST  /api/opportunities
 PATCH /api/opportunities/{vacancy_id}
+POST  /api/scans
 ```
 
 `POST` accepts JSON with `text` plus optional `source`, `sourceVacancyId`,
@@ -68,6 +70,12 @@ identity use the existing collected-vacancy and store contracts.
 Allowed values are `new`, `shortlisted`, and `dismissed`. Updating status never
 changes the matcher recommendation.
 
+`POST /api/scans` accepts exactly one enabled saved-profile ID. Its synchronous,
+versioned report exposes `completed`, `partial`, `blocked`, or `failed` for each
+source with safe counts and messages. It never returns vacancy descriptions,
+search URLs, local paths, or configuration values. See the dedicated
+HeadHunter source specification for collection and authorization boundaries.
+
 ## User experience
 
 - Desktop uses a ranked list and detail workspace; small screens stack them.
@@ -75,6 +83,8 @@ changes the matcher recommendation.
 - Filters update the Inbox without losing the selected opportunity.
 - The import dialog has labelled fields, inline validation, explicit progress,
   and an accessible completion/error announcement.
+- The scan control exposes the selected profile, in-progress state, final source
+  status, imported count, and skipped count without hiding prior Inbox rows.
 - An empty database explains how to add the first vacancy. Error states keep
   prior useful data visible and offer a retry.
 - All actions are keyboard reachable, focus is visible, headings are ordered,
@@ -84,6 +94,8 @@ changes the matcher recommendation.
 
 - A fresh local database renders a useful empty state.
 - Manual paste creates or updates one deterministic Inbox entry and selects it.
+- A configured source scan imports validated vacancies through the same matcher
+  and store; an unconfigured scan performs no network request.
 - List filters, explained detail, and status changes work end to end.
 - Full vacancy text and private profile values do not appear in API responses,
   HTML, browser logs, or committed fixtures.

@@ -136,7 +136,22 @@ Inbox filters, evidence/gap review, provenance, and independent
 `new`/`shortlisted`/`dismissed` decisions. Full vacancy text remains in the
 ignored local SQLite database and is never returned by the browser API.
 
-`Scan vacancies` is intentionally disabled until the first source adapter is
-implemented after official HeadHunter API/terms research. The panel loads no
-remote scripts, fonts, analytics, or vacancy sources. See
+The first source adapter uses the official HeadHunter API. Before enabling live
+scans, register your application at `dev.hh.ru`, then create the ignored local
+configuration:
+
+```bash
+cp hh_source.local.example.yaml hh_source.local.yaml
+```
+
+Set `registered_application: true` only after registration and replace the
+example `HH-User-Agent` contact. Then choose one saved profile and press
+`Scan vacancies`. Without confirmed local configuration, the action returns a
+safe `blocked` result before making a network request. No OAuth token, HH login,
+password, or API key is read or stored in this slice.
+
+The panel loads no remote scripts, fonts, or analytics. Vacancy descriptions
+retrieved from HH stay in local SQLite and are processed only by the local
+deterministic matcher. See
+[`docs/headhunter-source-spec.md`](docs/headhunter-source-spec.md) and
 [`docs/local-web-panel-spec.md`](docs/local-web-panel-spec.md).
