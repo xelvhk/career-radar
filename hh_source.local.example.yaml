@@ -1,0 +1,5 @@
+schema_version: 1
+source:
+  enabled: true
+  registered_application: true
+  user_agent: CareerRadar/0.1 (contact@example.com)

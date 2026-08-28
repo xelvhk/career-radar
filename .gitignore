@@ -6,6 +6,7 @@ __pycache__/
 .env.*
 !.env.example
 career_profile.local.yaml
+hh_source.local.yaml
 career_radar.local.sqlite3*
 *.key
 *.pem
