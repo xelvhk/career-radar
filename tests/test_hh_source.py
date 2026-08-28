@@ -156,6 +156,7 @@ class HeadHunterSourceTests(unittest.TestCase):
             transport.get_json("/vacancies", {}, "CareerRadar/0.1 (contact@example.com)")
 
         self.assertNotIn("external marker", str(raised.exception))
+        raised.exception.__cause__.close()
 
 
 if __name__ == "__main__":
