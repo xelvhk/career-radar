@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .collected_vacancy import CollectedVacancyInput, normalize_collected_vacancy
+from .collected_vacancy import CollectedVacancy, CollectedVacancyInput, normalize_collected_vacancy
 from .local_profile import apply_local_profile, load_local_profile
 from .matching import analyze_vacancy
 from .matching_config import load_matching_config
@@ -64,6 +64,15 @@ class OpportunityImporter:
                 description=description,
             )
         )
+        return self.import_collected(vacancy, matched_at=matched_at)
+
+    def import_collected(
+        self,
+        vacancy: CollectedVacancy,
+        *,
+        matched_at: datetime | None = None,
+    ) -> UpsertResult:
+        """Match and persist a vacancy already validated at a source boundary."""
         report = analyze_vacancy(
             vacancy.matcher_text,
             projects_data=self.projects,
