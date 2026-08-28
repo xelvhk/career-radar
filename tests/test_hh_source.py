@@ -8,6 +8,7 @@ from career_radar.hh_source import (
     HeadHunterConfig,
     SourceBlockedError,
     SourceRequestError,
+    VacancyUnavailableError,
     load_hh_config,
     _NoRedirectHandler,
 )
@@ -87,6 +88,20 @@ class HeadHunterSourceTests(unittest.TestCase):
         self.assertEqual(transport.calls[0][1]["per_page"], "10")
         self.assertIn('"Python Backend Developer"', transport.calls[0][1]["text"])
         self.assertNotIn("contact@example.com", str(transport.calls[0][1]))
+
+    def test_vacancy_that_disappears_after_search_is_skipped(self) -> None:
+        adapter = HeadHunterAdapter(
+            HeadHunterConfig(True, True, "CareerRadar/0.1 (contact@example.com)"),
+            transport=FakeTransport([
+                {"items": [{"id": "101"}]},
+                VacancyUnavailableError("HeadHunter vacancy is no longer available"),
+            ]),
+        )
+
+        batch = adapter.collect(QUERY)
+
+        self.assertEqual(batch.records, ())
+        self.assertEqual(batch.skipped_count, 1)
 
     def test_invalid_search_and_detail_fail_with_safe_messages(self) -> None:
         config = HeadHunterConfig(True, True, "CareerRadar/0.1 (contact@example.com)")

@@ -46,6 +46,10 @@ class SourceRequestError(RuntimeError):
     """A safe, bounded external-source failure."""
 
 
+class VacancyUnavailableError(SourceRequestError):
+    """A vacancy disappeared between search and detail retrieval."""
+
+
 class JsonTransport(Protocol):
     def get_json(self, path: str, parameters: dict[str, str], user_agent: str) -> Any:
         """Fetch one JSON document from the fixed HeadHunter API origin."""
@@ -78,6 +82,8 @@ class HeadHunterTransport:
                 raise SourceRequestError("HeadHunter rate limit reached; try again later") from error
             if error.code in {401, 403}:
                 raise SourceRequestError("HeadHunter rejected the application authorization") from error
+            if error.code == 404:
+                raise VacancyUnavailableError("HeadHunter vacancy is no longer available") from error
             if error.code == 400:
                 raise SourceRequestError("HeadHunter rejected the search request") from error
             raise SourceRequestError(SAFE_MESSAGE) from error
@@ -145,9 +151,13 @@ class HeadHunterAdapter:
             if vacancy_id in seen:
                 continue
             seen.add(vacancy_id)
-            detail = self.transport.get_json(
-                f"/vacancies/{vacancy_id}", {}, self.config.user_agent
-            )
+            try:
+                detail = self.transport.get_json(
+                    f"/vacancies/{vacancy_id}", {}, self.config.user_agent
+                )
+            except VacancyUnavailableError:
+                skipped += 1
+                continue
             try:
                 record = _normalize_detail(detail, vacancy_id, self.clock())
             except SourceRequestError:

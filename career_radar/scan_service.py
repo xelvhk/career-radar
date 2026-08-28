@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -29,15 +29,16 @@ class SourceScanResult:
     message: str
 
     def to_dict(self) -> dict[str, object]:
-        values = asdict(self)
-        return {"source": values.pop("source"), "status": values.pop("status"), **{
-            "fetchedCount": values["fetched_count"],
-            "importedCount": values["imported_count"],
-            "createdCount": values["created_count"],
-            "updatedCount": values["updated_count"],
-            "skippedCount": values["skipped_count"],
-            "message": values["message"],
-        }}
+        return {
+            "source": self.source,
+            "status": self.status,
+            "fetchedCount": self.fetched_count,
+            "importedCount": self.imported_count,
+            "createdCount": self.created_count,
+            "updatedCount": self.updated_count,
+            "skippedCount": self.skipped_count,
+            "message": self.message,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,7 +128,7 @@ class ScanService:
             message = failure_message or "HeadHunter could not complete the scan"
         elif failures:
             status = "partial"
-            message = "HeadHunter scan completed with a variant failure"
+            message = f"HeadHunter scan completed partially: {failure_message}"
         else:
             status = "completed"
             message = "HeadHunter scan completed"

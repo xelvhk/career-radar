@@ -86,7 +86,7 @@ class ScanServiceTests(unittest.TestCase):
 
         self.assertEqual(report.status, "partial")
         self.assertEqual(len(saved), 1)
-        self.assertNotIn("rate limit", report.sources[0].message)
+        self.assertIn("rate limit", report.sources[0].message)
 
     def test_unknown_profile_is_rejected_without_source_call(self) -> None:
         adapter = FakeAdapter([])
