@@ -1,11 +1,15 @@
+import json
 import tempfile
 import unittest
+import urllib.error
 from datetime import datetime, timezone
+from email.message import Message
 from pathlib import Path
 
 from career_radar.hh_source import (
     HeadHunterAdapter,
     HeadHunterConfig,
+    HeadHunterTransport,
     SourceBlockedError,
     SourceRequestError,
     VacancyUnavailableError,
@@ -24,6 +28,11 @@ QUERY = CompiledSearchQuery(
     skill_terms=("python", "fastapi"),
     exclude_terms=("php", "bitrix"),
 )
+FIXTURES = Path(__file__).parent / "fixtures" / "hh"
+
+
+def fixture(name):
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
 class FakeTransport:
@@ -37,6 +46,17 @@ class FakeTransport:
         if isinstance(response, Exception):
             raise response
         return response
+
+
+class ErrorOpener:
+    def __init__(self, status, headers=None):
+        self.status = status
+        self.headers = headers or Message()
+
+    def open(self, request, timeout):
+        raise urllib.error.HTTPError(
+            request.full_url, self.status, "external marker", self.headers, None
+        )
 
 
 class HeadHunterSourceTests(unittest.TestCase):
@@ -62,12 +82,8 @@ class HeadHunterSourceTests(unittest.TestCase):
     def test_collects_valid_detail_and_skips_archived_or_malformed_items(self) -> None:
         transport = FakeTransport(
             [
-                {"items": [{"id": "101"}, {"id": "bad"}, {"id": "102"}]},
-                {
-                    "id": "101", "name": "Python Engineer", "archived": False,
-                    "alternate_url": "https://hh.ru/vacancy/101",
-                    "description": "Python, FastAPI and PostgreSQL",
-                },
+                fixture("search.json"),
+                fixture("vacancy-101.json"),
                 {
                     "id": "102", "name": "Old role", "archived": True,
                     "alternate_url": "https://hh.ru/vacancy/102", "description": "old",
@@ -129,6 +145,17 @@ class HeadHunterSourceTests(unittest.TestCase):
         with self.assertRaises(SourceRequestError) as raised:
             adapter.collect(QUERY)
         self.assertNotIn(marker, str(raised.exception))
+
+    def test_transport_maps_rate_limit_and_bounded_retry_after(self) -> None:
+        headers = Message()
+        headers["Retry-After"] = "120"
+        transport = HeadHunterTransport()
+        transport._opener = ErrorOpener(429, headers)
+
+        with self.assertRaisesRegex(SourceRequestError, "120 seconds") as raised:
+            transport.get_json("/vacancies", {}, "CareerRadar/0.1 (contact@example.com)")
+
+        self.assertNotIn("external marker", str(raised.exception))
 
 
 if __name__ == "__main__":

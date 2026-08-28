@@ -79,7 +79,12 @@ class HeadHunterTransport:
             if 300 <= error.code < 400:
                 raise SourceRequestError("HeadHunter returned an unsafe redirect") from error
             if error.code == 429:
-                raise SourceRequestError("HeadHunter rate limit reached; try again later") from error
+                retry_after = error.headers.get("Retry-After") if error.headers else None
+                if isinstance(retry_after, str) and retry_after.isdigit() and int(retry_after) <= 86_400:
+                    message = f"HeadHunter rate limit reached; try again in {int(retry_after)} seconds"
+                else:
+                    message = "HeadHunter rate limit reached; try again later"
+                raise SourceRequestError(message) from error
             if error.code in {401, 403}:
                 raise SourceRequestError("HeadHunter rejected the application authorization") from error
             if error.code == 404:
