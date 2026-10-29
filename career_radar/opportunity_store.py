@@ -14,6 +14,7 @@ from typing import Any, Literal, cast
 from urllib.parse import parse_qsl, urlsplit
 
 from .collected_vacancy import CollectedVacancy, CollectionMethod
+from .errors import OpportunityInputError, OpportunityNotFoundError, OpportunityStorageError
 from .matching import MatchReport
 from .reporting import report_to_dict
 
@@ -125,17 +126,19 @@ class OpportunityStore:
                 self._validate_path()
                 existed = True
             except OSError as error:
-                raise ValueError("cannot create opportunity database") from error
+                raise OpportunityStorageError("cannot create opportunity database") from error
         try:
             with closing(self._connect()) as connection:
                 self._prepare_schema(connection)
         except sqlite3.DatabaseError as error:
-            raise ValueError(DATABASE_ERROR) from error
+            raise OpportunityStorageError(DATABASE_ERROR) from error
         if not existed and os.name == "posix":
             try:
                 self.path.chmod(0o600)
             except OSError as error:
-                raise ValueError("cannot restrict opportunity database permissions") from error
+                raise OpportunityStorageError(
+                    "cannot restrict opportunity database permissions"
+                ) from error
 
     def upsert(
         self,
@@ -205,7 +208,7 @@ class OpportunityStore:
                 saved = self._select_one(connection, vacancy.id)
                 return UpsertResult(saved, created=False, stale=False)
         except sqlite3.DatabaseError as error:
-            raise ValueError(DATABASE_ERROR) from error
+            raise OpportunityStorageError(DATABASE_ERROR) from error
 
     def get(self, vacancy_id: str) -> Opportunity:
         _validate_vacancy_id(vacancy_id)
@@ -213,7 +216,7 @@ class OpportunityStore:
             with closing(self._connect()) as connection:
                 return self._select_one(connection, vacancy_id)
         except sqlite3.DatabaseError as error:
-            raise ValueError(DATABASE_ERROR) from error
+            raise OpportunityStorageError(DATABASE_ERROR) from error
 
     def list(
         self,
@@ -223,11 +226,11 @@ class OpportunityStore:
         limit: int = 20,
     ) -> tuple[Opportunity, ...]:
         if recommendation is not None and recommendation not in RECOMMENDATIONS:
-            raise ValueError("recommendation must be one of APPLY, REVIEW, SKIP")
+            raise OpportunityInputError("recommendation must be one of APPLY, REVIEW, SKIP")
         if status is not None and status not in STATUSES:
-            raise ValueError("status must be one of new, shortlisted, dismissed")
+            raise OpportunityInputError("status must be one of new, shortlisted, dismissed")
         if type(limit) is not int or not 1 <= limit <= 100:
-            raise ValueError("limit must be between 1 and 100")
+            raise OpportunityInputError("limit must be between 1 and 100")
 
         clauses: list[str] = []
         parameters: list[object] = []
@@ -254,11 +257,11 @@ class OpportunityStore:
                 rows = connection.execute(query, parameters).fetchall()
                 return tuple(_row_to_opportunity(row) for row in rows)
         except sqlite3.DatabaseError as error:
-            raise ValueError(DATABASE_ERROR) from error
+            raise OpportunityStorageError(DATABASE_ERROR) from error
 
     def set_status(self, vacancy_id: str, status: str) -> Opportunity:
         if status not in STATUSES:
-            raise ValueError("status must be one of new, shortlisted, dismissed")
+            raise OpportunityInputError("status must be one of new, shortlisted, dismissed")
         _validate_vacancy_id(vacancy_id)
         try:
             with closing(self._connect()) as connection, connection:
@@ -267,10 +270,10 @@ class OpportunityStore:
                     (status, vacancy_id),
                 )
                 if cursor.rowcount == 0:
-                    raise ValueError("opportunity was not found")
+                    raise OpportunityNotFoundError("opportunity was not found")
                 return self._select_one(connection, vacancy_id)
         except sqlite3.DatabaseError as error:
-            raise ValueError(DATABASE_ERROR) from error
+            raise OpportunityStorageError(DATABASE_ERROR) from error
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=5)
@@ -281,7 +284,7 @@ class OpportunityStore:
     def _prepare_schema(self, connection: sqlite3.Connection) -> None:
         version = connection.execute("PRAGMA user_version").fetchone()[0]
         if version > SCHEMA_VERSION:
-            raise ValueError(f"opportunity schema version {version} is not supported")
+            raise OpportunityStorageError(f"opportunity schema version {version} is not supported")
         if version == 0:
             tables = connection.execute(
                 """
@@ -290,38 +293,38 @@ class OpportunityStore:
                 """
             ).fetchall()
             if tables:
-                raise ValueError("unrecognized version zero database")
+                raise OpportunityStorageError("unrecognized version zero database")
             with connection:
                 connection.executescript(CREATE_SCHEMA)
         integrity = connection.execute("PRAGMA quick_check").fetchone()[0]
         if integrity != "ok":
-            raise ValueError(DATABASE_ERROR)
+            raise OpportunityStorageError(DATABASE_ERROR)
         columns = {row[1] for row in connection.execute("PRAGMA table_info(opportunities)")}
         if not EXPECTED_COLUMNS.issubset(columns):
-            raise ValueError("opportunity schema version 1 is incomplete")
+            raise OpportunityStorageError("opportunity schema version 1 is incomplete")
 
     def _select_one(self, connection: sqlite3.Connection, vacancy_id: str) -> Opportunity:
         row = connection.execute(
             "SELECT * FROM opportunities WHERE vacancy_id = ?", (vacancy_id,)
         ).fetchone()
         if row is None:
-            raise ValueError("opportunity was not found")
+            raise OpportunityNotFoundError("opportunity was not found")
         return _row_to_opportunity(row)
 
     def _validate_path(self) -> None:
         if self.path.is_symlink():
-            raise ValueError("database path must not be a symlink")
+            raise OpportunityStorageError("database path must not be a symlink")
         if self.path.exists() and not self.path.is_file():
-            raise ValueError("database path must be a regular file")
+            raise OpportunityStorageError("database path must be a regular file")
         if not self.path.parent.is_dir():
-            raise ValueError("database parent directory must exist")
+            raise OpportunityStorageError("database parent directory must exist")
 
 
 def _row_to_opportunity(row: sqlite3.Row) -> Opportunity:
     try:
         match_report = json.loads(row["report_json"])
         if not isinstance(match_report, dict):
-            raise ValueError(DATABASE_ERROR)
+            raise OpportunityStorageError(DATABASE_ERROR)
         vacancy = CollectedVacancy(
             id=row["vacancy_id"],
             source=row["source"],
@@ -345,14 +348,14 @@ def _row_to_opportunity(row: sqlite3.Row) -> Opportunity:
             status=cast(InboxStatus, row["status"]),
         )
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
-        if isinstance(error, ValueError) and str(error) == DATABASE_ERROR:
+        if isinstance(error, OpportunityStorageError):
             raise
-        raise ValueError(DATABASE_ERROR) from error
+        raise OpportunityStorageError(DATABASE_ERROR) from error
 
 
 def _validate_vacancy_id(value: object) -> None:
     if not isinstance(value, str) or VACANCY_ID_PATTERN.fullmatch(value) is None:
-        raise ValueError("vacancy_id must match vac-<64 lowercase hex characters>")
+        raise OpportunityInputError("vacancy_id must match vac-<64 lowercase hex characters>")
 
 
 def _validate_persistable_url(value: str | None) -> None:
@@ -362,21 +365,21 @@ def _validate_persistable_url(value: str | None) -> None:
         key.casefold() for key, _ in parse_qsl(urlsplit(value).query, keep_blank_values=True)
     }
     if query_keys & SENSITIVE_QUERY_KEYS:
-        raise ValueError("source_url contains a sensitive query parameter")
+        raise OpportunityInputError("source_url contains a sensitive query parameter")
 
 
 def _validate_report(report: MatchReport) -> None:
     if report.recommendation not in RECOMMENDATIONS:
-        raise ValueError("recommendation must be one of APPLY, REVIEW, SKIP")
+        raise OpportunityInputError("recommendation must be one of APPLY, REVIEW, SKIP")
     if type(report.overall_score) is not int or not 0 <= report.overall_score <= 100:
-        raise ValueError("overall_score must be between 0 and 100")
+        raise OpportunityInputError("overall_score must be between 0 and 100")
     if type(report.confidence) is not int or not 0 <= report.confidence <= 100:
-        raise ValueError("confidence must be between 0 and 100")
+        raise OpportunityInputError("confidence must be between 0 and 100")
 
 
 def _as_utc(value: object, field: str) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
-        raise ValueError(f"{field} must be timezone-aware")
+        raise OpportunityInputError(f"{field} must be timezone-aware")
     return value.astimezone(UTC)
 
 
@@ -386,5 +389,5 @@ def _format_time(value: datetime) -> str:
 
 def _parse_time(value: object) -> datetime:
     if not isinstance(value, str):
-        raise ValueError(DATABASE_ERROR)
+        raise OpportunityStorageError(DATABASE_ERROR)
     return _as_utc(datetime.fromisoformat(value.replace("Z", "+00:00")), "timestamp")

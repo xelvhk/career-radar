@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from .errors import OpportunityInputError, OpportunityNotFoundError, OpportunityStorageError
 from .hh_source import HeadHunterAdapter, JsonTransport, SourceBlockedError, load_hh_config
 from .opportunity_reporting import opportunity_to_dict
 from .opportunity_service import OpportunityImporter
@@ -82,6 +83,7 @@ def create_app(
         redoc_url=None,
         openapi_url=None,
     )
+    _register_error_handlers(app)
 
     @app.middleware("http")
     async def protect_local_boundary(request: Request, call_next):  # type: ignore[no-untyped-def]
@@ -95,25 +97,6 @@ def create_app(
         for name, value in SECURITY_HEADERS.items():
             response.headers[name] = value
         return response
-
-    @app.exception_handler(RequestValidationError)
-    async def validation_error(
-        _request: Request, _error_value: RequestValidationError
-    ) -> JSONResponse:
-        return _error(422, "VALIDATION_ERROR", "Invalid request")
-
-    @app.exception_handler(ValueError)
-    async def value_error(_request: Request, error: ValueError) -> JSONResponse:
-        message = str(error)
-        if message == "opportunity was not found":
-            return _error(404, "NOT_FOUND", "Opportunity was not found")
-        if "database" in message or "schema version" in message:
-            return _error(500, "STORAGE_ERROR", "Local opportunity storage is unavailable")
-        return _error(400, "INVALID_INPUT", message)
-
-    @app.exception_handler(Exception)
-    async def unexpected_error(_request: Request, _error_value: Exception) -> JSONResponse:
-        return _error(500, "INTERNAL_ERROR", "The local panel could not complete the request")
 
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:
@@ -199,6 +182,40 @@ def create_app(
         }
 
     return app
+
+
+def _register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(
+        _request: Request, _error_value: RequestValidationError
+    ) -> JSONResponse:
+        return _error(422, "VALIDATION_ERROR", "Invalid request")
+
+    @app.exception_handler(OpportunityNotFoundError)
+    async def not_found_error(
+        _request: Request, _error_value: OpportunityNotFoundError
+    ) -> JSONResponse:
+        return _error(404, "NOT_FOUND", "Opportunity was not found")
+
+    @app.exception_handler(OpportunityStorageError)
+    async def storage_error(
+        _request: Request, _error_value: OpportunityStorageError
+    ) -> JSONResponse:
+        return _error(500, "STORAGE_ERROR", "Local opportunity storage is unavailable")
+
+    @app.exception_handler(OpportunityInputError)
+    async def opportunity_input_error(
+        _request: Request, error: OpportunityInputError
+    ) -> JSONResponse:
+        return _error(400, "INVALID_INPUT", str(error))
+
+    @app.exception_handler(ValueError)
+    async def value_error(_request: Request, error: ValueError) -> JSONResponse:
+        return _error(400, "INVALID_INPUT", str(error))
+
+    @app.exception_handler(Exception)
+    async def unexpected_error(_request: Request, _error_value: Exception) -> JSONResponse:
+        return _error(500, "INTERNAL_ERROR", "The local panel could not complete the request")
 
 
 def _hostname(host_header: str) -> str | None:

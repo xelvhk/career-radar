@@ -12,6 +12,11 @@ from career_radar.collected_vacancy import (
     CollectedVacancyInput,
     normalize_collected_vacancy,
 )
+from career_radar.errors import (
+    OpportunityInputError,
+    OpportunityNotFoundError,
+    OpportunityStorageError,
+)
 from career_radar.matching import MatchReport
 from career_radar.vacancy import Vacancy
 
@@ -140,13 +145,13 @@ class OpportunityStoreTests(unittest.TestCase):
     def test_get_and_set_status_reject_unknown_ids_or_values(self) -> None:
         store = OpportunityStore(self.db_path)
 
-        with self.assertRaisesRegex(ValueError, "opportunity was not found"):
+        with self.assertRaisesRegex(OpportunityNotFoundError, "opportunity was not found"):
             store.get("vac-" + "0" * 64)
-        with self.assertRaisesRegex(ValueError, "status must be one of"):
+        with self.assertRaisesRegex(OpportunityInputError, "status must be one of"):
             store.set_status("vac-" + "0" * 64, "applied")
-        with self.assertRaisesRegex(ValueError, "vacancy_id must match"):
+        with self.assertRaisesRegex(OpportunityInputError, "vacancy_id must match"):
             store.get("not-an-id")
-        with self.assertRaisesRegex(ValueError, "limit must be between 1 and 100"):
+        with self.assertRaisesRegex(OpportunityInputError, "limit must be between 1 and 100"):
             store.list(limit=101)
 
     def test_rejects_sensitive_url_query_without_echoing_it(self) -> None:
@@ -158,7 +163,7 @@ class OpportunityStoreTests(unittest.TestCase):
         for source_url in urls:
             with self.subTest(source_url=source_url):
                 vacancy = self._vacancy(source_url=source_url)
-                with self.assertRaises(ValueError) as context:
+                with self.assertRaises(OpportunityInputError) as context:
                     store.upsert(vacancy, self._report("REVIEW", 72), UTC_TIME)
                 self.assertIn("sensitive query parameter", str(context.exception))
                 self.assertNotIn("private-value", str(context.exception))
@@ -179,7 +184,7 @@ class OpportunityStoreTests(unittest.TestCase):
             connection.execute("INSERT INTO keep_me VALUES ('unchanged')")
             connection.execute("PRAGMA user_version = 2")
 
-        with self.assertRaisesRegex(ValueError, "schema version 2 is not supported"):
+        with self.assertRaisesRegex(OpportunityStorageError, "schema version 2 is not supported"):
             OpportunityStore(self.db_path)
 
         with closing(sqlite3.connect(self.db_path)) as connection:

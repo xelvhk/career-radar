@@ -3,9 +3,12 @@ import tempfile
 import unittest
 from contextlib import closing
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from career_radar.errors import OpportunityNotFoundError, OpportunityStorageError
+from career_radar.opportunity_store import OpportunityStore
 from career_radar.panel import create_app
 from tests.test_repository_data import ROOT
 
@@ -218,6 +221,27 @@ class PanelApiTests(unittest.TestCase):
         self.assertEqual(unknown.status_code, 404)
         for response in (unsafe, invalid_filter, unknown):
             self.assertEqual(set(response.json()), {"error"})
+
+    def test_domain_error_types_define_http_status_without_message_matching(self) -> None:
+        vacancy_id = "vac-" + "0" * 64
+        with patch.object(
+            OpportunityStore,
+            "get",
+            side_effect=OpportunityNotFoundError("message deliberately changed"),
+        ):
+            missing = self.client.get(f"/api/opportunities/{vacancy_id}")
+        with patch.object(
+            OpportunityStore,
+            "get",
+            side_effect=OpportunityStorageError("opaque storage failure"),
+        ):
+            unavailable = self.client.get(f"/api/opportunities/{vacancy_id}")
+
+        self.assertEqual(missing.status_code, 404)
+        self.assertEqual(missing.json()["error"]["code"], "NOT_FOUND")
+        self.assertEqual(unavailable.status_code, 500)
+        self.assertEqual(unavailable.json()["error"]["code"], "STORAGE_ERROR")
+        self.assertNotIn("opaque", unavailable.text)
 
     def test_non_loopback_host_is_rejected(self) -> None:
         response = self.client.get("/api/opportunities", headers={"Host": "career-radar.example"})
