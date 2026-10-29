@@ -95,14 +95,36 @@ class OpportunityStoreTests(unittest.TestCase):
             "stale private marker", self.db_path.read_bytes().decode("utf-8", errors="ignore")
         )
 
-    def test_equal_timestamp_is_an_accepted_repeat_observation(self) -> None:
+    def test_exact_retry_is_unchanged_and_does_not_increment_seen_count(self) -> None:
+        store = OpportunityStore(self.db_path)
+        first = store.upsert(self._vacancy(), self._report("REVIEW", 72), UTC_TIME)
+
+        result = store.upsert(
+            self._vacancy(),
+            self._report("REVIEW", 72),
+            UTC_TIME + timedelta(hours=1),
+        )
+
+        self.assertFalse(result.stale)
+        self.assertTrue(result.unchanged)
+        self.assertEqual(result.opportunity, first.opportunity)
+        self.assertEqual(result.opportunity.seen_count, 1)
+
+    def test_equal_timestamp_can_refresh_match_without_counting_another_sighting(self) -> None:
         store = OpportunityStore(self.db_path)
         store.upsert(self._vacancy(), self._report("REVIEW", 72), UTC_TIME)
 
-        result = store.upsert(self._vacancy(), self._report("REVIEW", 72), UTC_TIME)
+        result = store.upsert(
+            self._vacancy(),
+            self._report("APPLY", 88),
+            UTC_TIME + timedelta(hours=1),
+        )
 
         self.assertFalse(result.stale)
-        self.assertEqual(result.opportunity.seen_count, 2)
+        self.assertFalse(result.unchanged)
+        self.assertEqual(result.opportunity.seen_count, 1)
+        self.assertEqual(result.opportunity.recommendation, "APPLY")
+        self.assertEqual(result.opportunity.matched_at, UTC_TIME + timedelta(hours=1))
 
     def test_different_deterministic_ids_are_not_merged(self) -> None:
         store = OpportunityStore(self.db_path)

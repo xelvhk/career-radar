@@ -95,6 +95,24 @@ class PanelApiTests(unittest.TestCase):
         self.assertEqual(updated.json()["opportunity"]["status"], "shortlisted")
         self.assertEqual(listed.json()["opportunityCount"], 1)
 
+    def test_exact_import_retry_is_reported_as_unchanged(self) -> None:
+        payload = {
+            "text": "Python Engineer\nRequirements:\n- Python",
+            "source": "manual",
+            "sourceUrl": "https://example.com/vacancies/99",
+            "retrievedAt": "2026-08-24T09:00:00Z",
+        }
+        first = self.client.post("/api/opportunities", headers=MUTATION_HEADERS, json=payload)
+        repeated = self.client.post("/api/opportunities", headers=MUTATION_HEADERS, json=payload)
+
+        self.assertEqual(first.status_code, 201)
+        self.assertTrue(first.json()["created"])
+        self.assertFalse(first.json()["unchanged"])
+        self.assertEqual(repeated.status_code, 201)
+        self.assertFalse(repeated.json()["created"])
+        self.assertTrue(repeated.json()["unchanged"])
+        self.assertEqual(repeated.json()["opportunity"]["seenCount"], 1)
+
     def test_mutations_require_same_origin_marker(self) -> None:
         payload = {"text": "Python Engineer\nRequirements:\n- Python"}
         missing = self.client.post("/api/opportunities", json=payload)

@@ -109,7 +109,7 @@ class ScanService:
         created = updated = imported = 0
         for record in records.values():
             upsert_result = self.importer.import_collected(record)
-            if upsert_result.stale:
+            if upsert_result.stale or upsert_result.unchanged:
                 skipped += 1
                 continue
             imported += 1

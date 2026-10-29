@@ -18,6 +18,7 @@ def import_result_to_json(result: UpsertResult) -> str:
             "operation": "import",
             "created": result.created,
             "stale": result.stale,
+            "unchanged": result.unchanged,
             "opportunity": opportunity_to_dict(result.opportunity, include_match_report=True),
         }
     )
@@ -71,7 +72,14 @@ def opportunity_to_dict(opportunity: Opportunity, *, include_match_report: bool)
 
 
 def import_result_to_markdown(result: UpsertResult) -> str:
-    state = "created" if result.created else "stale" if result.stale else "updated"
+    if result.created:
+        state = "created"
+    elif result.stale:
+        state = "stale"
+    elif result.unchanged:
+        state = "unchanged"
+    else:
+        state = "updated"
     return _opportunity_markdown(result.opportunity, heading="Opportunity Imported", state=state)
 
 

@@ -75,6 +75,30 @@ class ScanServiceTests(unittest.TestCase):
         self.assertEqual(len(saved), 1)
         self.assertEqual(saved[0].vacancy.source, "hh")
 
+    def test_repeat_scan_reports_unchanged_observation_as_skipped(self) -> None:
+        item = vacancy()
+        adapter = FakeAdapter(
+            [
+                CollectionBatch((item,), 0),
+                CollectionBatch((), 0),
+                CollectionBatch((item,), 0),
+                CollectionBatch((), 0),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "inbox.sqlite3"
+            service = ScanService(ROOT, OpportunityImporter(ROOT, database), adapter)
+
+            first = service.scan("python-fastapi")
+            repeated = service.scan("python-fastapi")
+            saved = OpportunityStore(database).list()
+
+        self.assertEqual(first.sources[0].created_count, 1)
+        self.assertEqual(repeated.sources[0].imported_count, 0)
+        self.assertEqual(repeated.sources[0].updated_count, 0)
+        self.assertEqual(repeated.sources[0].skipped_count, 1)
+        self.assertEqual(saved[0].seen_count, 1)
+
     def test_one_failed_variant_is_partial_and_preserves_success(self) -> None:
         adapter = FakeAdapter(
             [

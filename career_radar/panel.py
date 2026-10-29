@@ -168,6 +168,7 @@ def create_app(
             "panelVersion": PANEL_VERSION,
             "created": result.created,
             "stale": result.stale,
+            "unchanged": result.unchanged,
             "opportunity": opportunity_to_dict(result.opportunity, include_match_report=True),
         }
 

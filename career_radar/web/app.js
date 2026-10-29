@@ -300,7 +300,13 @@ const submitImport = async (event) => {
     elements.dialog.close();
     elements.form.reset();
     await loadInbox();
-    announce(result.created ? "Opportunity added" : "Opportunity updated");
+    announce(
+      result.created
+        ? "Opportunity added"
+        : result.unchanged
+          ? "Opportunity already up to date"
+          : "Opportunity updated",
+    );
   } catch (error) {
     elements.formError.textContent = error.message;
     elements.formError.hidden = false;

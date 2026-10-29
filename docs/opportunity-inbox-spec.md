@@ -53,10 +53,13 @@ versioned match-report dictionary, `matched_at`, and the independent inbox
 status. Status is only `new`, `shortlisted`, or `dismissed`; changing it never
 changes the matcher recommendation.
 
-`UpsertResult` returns the current opportunity plus `created` and `stale`
-flags. An observation older than `last_seen_at` is reported as stale and changes
-nothing. An equal or newer observation atomically replaces current provenance,
-content, and match snapshot, increments `seen_count`, and preserves inbox status.
+`UpsertResult` returns the current opportunity plus `created`, `stale`, and
+`unchanged` flags. An observation older than `last_seen_at` is reported as stale
+and changes nothing. An exact retry is reported as unchanged and changes
+nothing, including `matched_at`. An equal-timestamp observation with changed
+content or match output refreshes the current snapshot without incrementing
+`seen_count`. A newer observation refreshes the snapshot and increments
+`seen_count`. Every update preserves inbox status.
 Different deterministic vacancy IDs are never merged.
 
 ## SQLite Schema and Lifecycle

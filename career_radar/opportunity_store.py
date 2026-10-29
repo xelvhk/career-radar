@@ -105,6 +105,7 @@ class UpsertResult:
     opportunity: Opportunity
     created: bool
     stale: bool
+    unchanged: bool = False
 
 
 class OpportunityStore:
@@ -170,6 +171,7 @@ class OpportunityStore:
         )
         try:
             with closing(self._connect()) as connection, connection:
+                connection.execute("BEGIN IMMEDIATE")
                 row = connection.execute(
                     "SELECT * FROM opportunities WHERE vacancy_id = ?",
                     (vacancy.id,),
@@ -187,26 +189,29 @@ class OpportunityStore:
                         (vacancy.id, *values[:6], retrieved_at, *values[6:]),
                     )
                     saved = self._select_one(connection, vacancy.id)
-                    return UpsertResult(saved, created=True, stale=False)
+                    return UpsertResult(saved, created=True, stale=False, unchanged=False)
 
                 current = _row_to_opportunity(row)
                 if vacancy.retrieved_at < current.last_seen_at:
-                    return UpsertResult(current, created=False, stale=True)
+                    return UpsertResult(current, created=False, stale=True, unchanged=False)
+                if _same_observation(current, vacancy, report_payload):
+                    return UpsertResult(current, created=False, stale=False, unchanged=True)
 
+                seen_increment = int(vacancy.retrieved_at > current.last_seen_at)
                 connection.execute(
                     """
                     UPDATE opportunities SET
                         source = ?, source_vacancy_id = ?, source_url = ?,
                         collection_method = ?, title = ?, description = ?,
-                        last_seen_at = ?, seen_count = seen_count + 1,
+                        last_seen_at = ?, seen_count = seen_count + ?,
                         recommendation = ?, overall_score = ?, confidence = ?,
                         report_json = ?, matched_at = ?
                     WHERE vacancy_id = ?
                     """,
-                    (*values, vacancy.id),
+                    (*values[:7], seen_increment, *values[7:], vacancy.id),
                 )
                 saved = self._select_one(connection, vacancy.id)
-                return UpsertResult(saved, created=False, stale=False)
+                return UpsertResult(saved, created=False, stale=False, unchanged=False)
         except sqlite3.DatabaseError as error:
             raise OpportunityStorageError(DATABASE_ERROR) from error
 
@@ -351,6 +356,14 @@ def _row_to_opportunity(row: sqlite3.Row) -> Opportunity:
         if isinstance(error, OpportunityStorageError):
             raise
         raise OpportunityStorageError(DATABASE_ERROR) from error
+
+
+def _same_observation(
+    current: Opportunity,
+    vacancy: CollectedVacancy,
+    report_payload: dict[str, Any],
+) -> bool:
+    return current.vacancy == vacancy and current.match_report == report_payload
 
 
 def _validate_vacancy_id(value: object) -> None:

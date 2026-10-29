@@ -42,6 +42,7 @@ class InboxCliTests(unittest.TestCase):
             imported = self._run(*arguments)
             repeated = self._run(*arguments)
             imported_payload = json.loads(imported.stdout)
+            repeated_payload = json.loads(repeated.stdout)
             vacancy_id = imported_payload["opportunity"]["id"]
             recommendation = imported_payload["opportunity"]["recommendation"]
 
@@ -81,7 +82,8 @@ class InboxCliTests(unittest.TestCase):
         self.assertEqual(imported.returncode, 0, imported.stderr)
         self.assertEqual(repeated.returncode, 0, repeated.stderr)
         self.assertTrue(imported_payload["created"])
-        self.assertFalse(json.loads(repeated.stdout)["created"])
+        self.assertFalse(repeated_payload["created"])
+        self.assertTrue(repeated_payload["unchanged"])
         self.assertNotIn(private_marker, imported.stdout)
         self.assertNotIn("description", imported_payload["opportunity"])
         self.assertTrue(stored_description.startswith("Company context:"))
@@ -93,8 +95,8 @@ class InboxCliTests(unittest.TestCase):
         self.assertEqual(updated_payload["opportunity"]["status"], "shortlisted")
         self.assertEqual(updated_payload["opportunity"]["recommendation"], recommendation)
         self.assertEqual(listed_payload["opportunityCount"], 1)
-        self.assertEqual(listed_payload["opportunities"][0]["seenCount"], 2)
-        self.assertEqual(shown_payload["opportunity"]["seenCount"], 2)
+        self.assertEqual(listed_payload["opportunities"][0]["seenCount"], 1)
+        self.assertEqual(shown_payload["opportunity"]["seenCount"], 1)
         self.assertIn("matchReport", shown_payload["opportunity"])
         self.assertNotIn(private_marker, shown.stdout)
 
