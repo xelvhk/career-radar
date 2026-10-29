@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .collected_vacancy import CollectedVacancy, CollectedVacancyInput, normalize_collected_vacancy
@@ -11,7 +11,6 @@ from .matching import analyze_vacancy
 from .matching_config import load_matching_config
 from .opportunity_store import OpportunityStore, UpsertResult
 from .validation import load_yaml
-
 
 MAX_VACANCY_BYTES = 800_000
 
@@ -33,9 +32,7 @@ class OpportunityImporter:
         if profile is not None:
             goals = apply_local_profile(goals, load_local_profile(profile))
         self.goals = goals
-        self.config = load_matching_config(
-            root / "matching.yaml", self.skills, self.goals
-        )
+        self.config = load_matching_config(root / "matching.yaml", self.skills, self.goals)
 
     def import_text(
         self,
@@ -80,16 +77,12 @@ class OpportunityImporter:
             goals_data=self.goals,
             config=self.config,
         )
-        return self.store.upsert(
-            vacancy, report, matched_at or datetime.now(timezone.utc)
-        )
+        return self.store.upsert(vacancy, report, matched_at or datetime.now(UTC))
 
 
 def split_vacancy(text: str) -> tuple[str, str]:
     lines = text.splitlines()
-    title_index = next(
-        (index for index, line in enumerate(lines) if line.strip()), None
-    )
+    title_index = next((index for index, line in enumerate(lines) if line.strip()), None)
     if title_index is None:
         raise ValueError("vacancy text is empty")
     title = lines[title_index].strip()
@@ -101,7 +94,7 @@ def split_vacancy(text: str) -> tuple[str, str]:
 
 def parse_retrieved_at(value: datetime | str | None) -> datetime:
     if value is None:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     if isinstance(value, datetime):
         parsed = value
     elif isinstance(value, str):
@@ -113,4 +106,4 @@ def parse_retrieved_at(value: datetime | str | None) -> datetime:
         raise ValueError("retrieved_at must be an RFC 3339 timestamp")
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("retrieved_at must include a timezone")
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)

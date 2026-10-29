@@ -10,7 +10,6 @@ from typing import Any
 
 import yaml
 
-
 PROFILE_SCHEMA_VERSION = 1
 MAX_PROFILE_BYTES = 64_000
 SENIORITY_VALUES = {"junior", "middle", "senior", "lead"}
@@ -93,26 +92,20 @@ def validate_local_profile(data: Any) -> list[str]:
     ):
         errors.append("profile.current_country_code must be an ISO alpha-2 code or null")
     seniority = profile.get("target_seniority")
-    if not isinstance(seniority, list) or any(
-        value not in SENIORITY_VALUES for value in seniority
-    ):
+    if not isinstance(seniority, list) or any(value not in SENIORITY_VALUES for value in seniority):
         errors.append("profile.target_seniority must contain supported seniority values")
     elif len(seniority) != len(set(seniority)):
         errors.append("profile.target_seniority must not contain duplicates")
     return errors
 
 
-def apply_local_profile(
-    goals_data: dict[str, Any], profile: LocalProfile
-) -> dict[str, Any]:
+def apply_local_profile(goals_data: dict[str, Any], profile: LocalProfile) -> dict[str, Any]:
     """Overlay explicit local facts without mutating checked-in career goals."""
     merged = copy.deepcopy(goals_data)
     goals = merged["career_goals"]
 
     existing_experience = goals.get("experience_profile", {})
-    experience_profile = (
-        dict(existing_experience) if isinstance(existing_experience, dict) else {}
-    )
+    experience_profile = dict(existing_experience) if isinstance(existing_experience, dict) else {}
     if profile.commercial_years is not None:
         experience_profile["commercial_years"] = profile.commercial_years
     if profile.confirmed_production_experience is not None:

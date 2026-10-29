@@ -13,7 +13,6 @@ if str(ROOT) not in sys.path:
 
 from career_radar.panel import LOOPBACK_HOSTS, create_app  # noqa: E402
 
-
 DEFAULT_DATABASE = ROOT / "career_radar.local.sqlite3"
 
 

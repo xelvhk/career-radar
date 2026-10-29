@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from career_radar.local_profile import apply_local_profile, load_local_profile  # noqa: E402
 from career_radar.matching import analyze_vacancy  # noqa: E402
 from career_radar.matching_config import load_matching_config  # noqa: E402
-from career_radar.local_profile import apply_local_profile, load_local_profile  # noqa: E402
 from career_radar.reporting import report_to_json, report_to_markdown  # noqa: E402
 from career_radar.validation import load_yaml  # noqa: E402
 
@@ -23,9 +23,7 @@ def main(argv: list[str] | None = None) -> int:
         description="Produce an evidence-backed match report for one vacancy."
     )
     parser.add_argument("vacancy", type=Path, help="UTF-8 vacancy text file")
-    parser.add_argument(
-        "--format", choices=("markdown", "json"), default="markdown"
-    )
+    parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
     parser.add_argument(
         "--profile",
         type=Path,

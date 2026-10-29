@@ -11,12 +11,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from .hh_source import HeadHunterAdapter, JsonTransport, SourceBlockedError, load_hh_config
 from .opportunity_reporting import opportunity_to_dict
 from .opportunity_service import OpportunityImporter
 from .opportunity_store import OpportunityStore
-from .hh_source import HeadHunterAdapter, JsonTransport, SourceBlockedError, load_hh_config
 from .scan_service import ScanService
-
 
 PANEL_VERSION = 1
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
@@ -39,9 +38,7 @@ class ImportRequest(BaseModel):
 
     text: str
     source: str = Field(default="manual", min_length=1, max_length=50)
-    source_vacancy_id: str | None = Field(
-        default=None, alias="sourceVacancyId", max_length=300
-    )
+    source_vacancy_id: str | None = Field(default=None, alias="sourceVacancyId", max_length=300)
     source_url: str | None = Field(default=None, alias="sourceUrl", max_length=2048)
     retrieved_at: str | None = Field(default=None, alias="retrievedAt", max_length=64)
 
@@ -77,9 +74,7 @@ def create_app(
     except SourceBlockedError as error:
         hh_adapter = None
         hh_blocked_message = str(error)
-    scanner = ScanService(
-        root, importer, hh_adapter, blocked_message=hh_blocked_message
-    )
+    scanner = ScanService(root, importer, hh_adapter, blocked_message=hh_blocked_message)
     app = FastAPI(
         title="Career Radar Local Panel",
         version=str(PANEL_VERSION),
@@ -93,9 +88,7 @@ def create_app(
         host = _hostname(request.headers.get("host", ""))
         if host not in LOOPBACK_HOSTS:
             response = _error(400, "INVALID_HOST", "Local host is required")
-        elif request.method not in {"GET", "HEAD", "OPTIONS"} and not _same_origin(
-            request
-        ):
+        elif request.method not in {"GET", "HEAD", "OPTIONS"} and not _same_origin(request):
             response = _error(403, "FORBIDDEN", "Local request verification failed")
         else:
             response = await call_next(request)
@@ -104,15 +97,13 @@ def create_app(
         return response
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error(  # type: ignore[no-untyped-def]
+    async def validation_error(
         _request: Request, _error_value: RequestValidationError
     ) -> JSONResponse:
         return _error(422, "VALIDATION_ERROR", "Invalid request")
 
     @app.exception_handler(ValueError)
-    async def value_error(  # type: ignore[no-untyped-def]
-        _request: Request, error: ValueError
-    ) -> JSONResponse:
+    async def value_error(_request: Request, error: ValueError) -> JSONResponse:
         message = str(error)
         if message == "opportunity was not found":
             return _error(404, "NOT_FOUND", "Opportunity was not found")
@@ -121,9 +112,7 @@ def create_app(
         return _error(400, "INVALID_INPUT", message)
 
     @app.exception_handler(Exception)
-    async def unexpected_error(  # type: ignore[no-untyped-def]
-        _request: Request, _error_value: Exception
-    ) -> JSONResponse:
+    async def unexpected_error(_request: Request, _error_value: Exception) -> JSONResponse:
         return _error(500, "INTERNAL_ERROR", "The local panel could not complete the request")
 
     @app.get("/", include_in_schema=False)
@@ -144,15 +133,12 @@ def create_app(
         status: Literal["new", "shortlisted", "dismissed"] | None = None,
         limit: Annotated[int, Query(ge=1, le=100)] = 100,
     ) -> dict[str, object]:
-        opportunities = store.list(
-            recommendation=recommendation, status=status, limit=limit
-        )
+        opportunities = store.list(recommendation=recommendation, status=status, limit=limit)
         return {
             "panelVersion": PANEL_VERSION,
             "opportunityCount": len(opportunities),
             "opportunities": [
-                opportunity_to_dict(item, include_match_report=False)
-                for item in opportunities
+                opportunity_to_dict(item, include_match_report=False) for item in opportunities
             ],
         }
 
@@ -183,9 +169,7 @@ def create_app(
     def get_opportunity(vacancy_id: str) -> dict[str, object]:
         return {
             "panelVersion": PANEL_VERSION,
-            "opportunity": opportunity_to_dict(
-                store.get(vacancy_id), include_match_report=True
-            ),
+            "opportunity": opportunity_to_dict(store.get(vacancy_id), include_match_report=True),
         }
 
     @app.post("/api/opportunities", status_code=201)
@@ -201,15 +185,11 @@ def create_app(
             "panelVersion": PANEL_VERSION,
             "created": result.created,
             "stale": result.stale,
-            "opportunity": opportunity_to_dict(
-                result.opportunity, include_match_report=True
-            ),
+            "opportunity": opportunity_to_dict(result.opportunity, include_match_report=True),
         }
 
     @app.patch("/api/opportunities/{vacancy_id}")
-    def set_opportunity_status(
-        vacancy_id: str, payload: StatusRequest
-    ) -> dict[str, object]:
+    def set_opportunity_status(vacancy_id: str, payload: StatusRequest) -> dict[str, object]:
         return {
             "panelVersion": PANEL_VERSION,
             "opportunity": opportunity_to_dict(

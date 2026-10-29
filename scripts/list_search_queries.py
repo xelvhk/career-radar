@@ -21,12 +21,8 @@ from career_radar.validation import load_yaml  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="List source-neutral vacancy search query plans."
-    )
-    parser.add_argument(
-        "--format", choices=("markdown", "json"), default="markdown"
-    )
+    parser = argparse.ArgumentParser(description="List source-neutral vacancy search query plans.")
+    parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
     arguments = parser.parse_args(argv)
 
     try:
@@ -86,9 +82,7 @@ def _to_markdown(queries: tuple[CompiledSearchQuery, ...]) -> str:
                 ]
             )
         skills = ", ".join(_escape_markdown(term) for term in query.skill_terms)
-        exclusions = ", ".join(
-            _escape_markdown(term) for term in query.exclude_terms
-        )
+        exclusions = ", ".join(_escape_markdown(term) for term in query.exclude_terms)
         lines.append(
             f"- **{_escape_markdown(query.title_phrase)}** — skills: {skills}; "
             f"exclude: {exclusions}"

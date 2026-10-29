@@ -101,3 +101,29 @@ Active development
 ## License
 
 License is not specified yet.
+
+## Quality gates
+
+Install the development checks and run the same gates as CI:
+
+```bash
+.venv/bin/python -m pip install -e '.[test,quality]'
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/mypy career_radar scripts
+.venv/bin/coverage run -m unittest discover -s tests
+.venv/bin/coverage combine
+.venv/bin/coverage report
+```
+
+The initial complexity ceiling is 40 so the gate records the current baseline.
+The next behavior-preserving refactor lowers it to 20; the long-term target is
+10. Mutation testing is intentionally explicit because it is slower than the
+per-push checks:
+
+```bash
+.venv/bin/python -m pip install -e '.[test,quality,mutation]'
+.venv/bin/mutmut run "career_radar.matching*"
+.venv/bin/mutmut run "career_radar.vacancy*"
+.venv/bin/mutmut run "career_radar.opportunity_store*"
+```

@@ -6,10 +6,9 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal, cast
 from urllib.parse import SplitResult, urlsplit, urlunsplit
-
 
 CollectionMethod = Literal["api", "browser", "manual_url", "manual_text"]
 
@@ -59,18 +58,11 @@ def normalize_collected_vacancy(
     retrieved_at = _utc_timestamp(raw.retrieved_at)
     collection_method = _collection_method(raw.collection_method)
     title = _required_text(raw.title, field="title", maximum=300)
-    description = _required_text(
-        raw.description, field="description", maximum=200_000
-    )
+    description = _required_text(raw.description, field="description", maximum=200_000)
 
-    if (
-        source_vacancy_id is None
-        and source_url is None
-        and collection_method != "manual_text"
-    ):
+    if source_vacancy_id is None and source_url is None and collection_method != "manual_text":
         raise ValueError(
-            "source_vacancy_id or source_url is required for "
-            f"{collection_method} collection"
+            f"source_vacancy_id or source_url is required for {collection_method} collection"
         )
 
     return CollectedVacancy(
@@ -109,20 +101,14 @@ def collected_vacancy_to_dict(record: CollectedVacancy) -> dict[str, object]:
 
 
 def _normalize_source(value: object) -> str:
-    if (
-        not isinstance(value, str)
-        or len(value) > 50
-        or SOURCE_PATTERN.fullmatch(value) is None
-    ):
+    if not isinstance(value, str) or len(value) > 50 or SOURCE_PATTERN.fullmatch(value) is None:
         raise ValueError("source must be a lowercase kebab-case identifier")
     return value
 
 
 def _collection_method(value: object) -> CollectionMethod:
     if not isinstance(value, str) or value not in COLLECTION_METHODS:
-        raise ValueError(
-            "collection_method must be one of api, browser, manual_url, manual_text"
-        )
+        raise ValueError("collection_method must be one of api, browser, manual_url, manual_text")
     return cast(CollectionMethod, value)
 
 
@@ -135,9 +121,7 @@ def _required_text(value: object, *, field: str, maximum: int) -> str:
     return normalized
 
 
-def _optional_bounded_text(
-    value: object, *, field: str, maximum: int
-) -> str | None:
+def _optional_bounded_text(value: object, *, field: str, maximum: int) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value.strip():
@@ -149,13 +133,9 @@ def _optional_bounded_text(
 
 
 def _utc_timestamp(value: object) -> datetime:
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() is None
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("retrieved_at must be timezone-aware")
-    return value.astimezone(timezone.utc)
+    return value.astimezone(UTC)
 
 
 def _canonical_https_url(value: object) -> str | None:
@@ -194,6 +174,7 @@ def _vacancy_id(
     title: str,
     description: str,
 ) -> str:
+    identity: tuple[str, ...]
     if source_vacancy_id is not None:
         identity = (IDENTITY_VERSION, "source-id", source, source_vacancy_id)
     elif source_url is not None:
@@ -206,9 +187,7 @@ def _vacancy_id(
             _identity_text(title),
             _identity_text(description),
         )
-    encoded = json.dumps(
-        identity, ensure_ascii=False, separators=(",", ":")
-    ).encode("utf-8")
+    encoded = json.dumps(identity, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     return "vac-" + hashlib.sha256(encoded).hexdigest()
 
 

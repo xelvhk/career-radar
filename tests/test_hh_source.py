@@ -2,7 +2,7 @@ import json
 import tempfile
 import unittest
 import urllib.error
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.message import Message
 from pathlib import Path
 
@@ -13,11 +13,10 @@ from career_radar.hh_source import (
     SourceBlockedError,
     SourceRequestError,
     VacancyUnavailableError,
-    load_hh_config,
     _NoRedirectHandler,
+    load_hh_config,
 )
 from career_radar.search_profiles import CompiledSearchQuery
-
 
 QUERY = CompiledSearchQuery(
     profile_id="python-fastapi",
@@ -85,15 +84,18 @@ class HeadHunterSourceTests(unittest.TestCase):
                 fixture("search.json"),
                 fixture("vacancy-101.json"),
                 {
-                    "id": "102", "name": "Old role", "archived": True,
-                    "alternate_url": "https://hh.ru/vacancy/102", "description": "old",
+                    "id": "102",
+                    "name": "Old role",
+                    "archived": True,
+                    "alternate_url": "https://hh.ru/vacancy/102",
+                    "description": "old",
                 },
             ]
         )
         adapter = HeadHunterAdapter(
             HeadHunterConfig(True, True, "CareerRadar/0.1 (contact@example.com)"),
             transport=transport,
-            clock=lambda: datetime(2026, 8, 28, tzinfo=timezone.utc),
+            clock=lambda: datetime(2026, 8, 28, tzinfo=UTC),
         )
 
         batch = adapter.collect(QUERY)
@@ -108,10 +110,12 @@ class HeadHunterSourceTests(unittest.TestCase):
     def test_vacancy_that_disappears_after_search_is_skipped(self) -> None:
         adapter = HeadHunterAdapter(
             HeadHunterConfig(True, True, "CareerRadar/0.1 (contact@example.com)"),
-            transport=FakeTransport([
-                {"items": [{"id": "101"}]},
-                VacancyUnavailableError("HeadHunter vacancy is no longer available"),
-            ]),
+            transport=FakeTransport(
+                [
+                    {"items": [{"id": "101"}]},
+                    VacancyUnavailableError("HeadHunter vacancy is no longer available"),
+                ]
+            ),
         )
 
         batch = adapter.collect(QUERY)
@@ -126,11 +130,18 @@ class HeadHunterSourceTests(unittest.TestCase):
 
         adapter = HeadHunterAdapter(
             config,
-            transport=FakeTransport([
-                {"items": [{"id": "101"}]},
-                {"id": "101", "name": "Role", "archived": False,
-                 "alternate_url": "https://evil.example/101", "description": "private-marker"},
-            ]),
+            transport=FakeTransport(
+                [
+                    {"items": [{"id": "101"}]},
+                    {
+                        "id": "101",
+                        "name": "Role",
+                        "archived": False,
+                        "alternate_url": "https://evil.example/101",
+                        "description": "private-marker",
+                    },
+                ]
+            ),
         )
         batch = adapter.collect(QUERY)
         self.assertEqual(batch.records, ())

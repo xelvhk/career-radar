@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeGuard
 
 from .validation import ID_PATTERN
-
 
 SEARCH_PROFILE_SCHEMA_VERSION = 1
 SEARCHABLE_LEVELS = {"practical", "public_evidence", "production"}
@@ -57,9 +56,7 @@ def validate_search_profiles(
     """Return deterministic cross-file errors for saved search profiles."""
     errors: list[str] = []
     if data.get("schema_version") != SEARCH_PROFILE_SCHEMA_VERSION:
-        errors.append(
-            f"schema_version must equal {SEARCH_PROFILE_SCHEMA_VERSION}"
-        )
+        errors.append(f"schema_version must equal {SEARCH_PROFILE_SCHEMA_VERSION}")
     profiles = data.get("search_profiles")
     if not isinstance(profiles, list) or not profiles:
         return errors + ["search_profiles must be a non-empty list"]
@@ -112,9 +109,7 @@ def validate_search_profiles(
 
         exclusions = profile.get("exclude_terms")
         if not _term_list(exclusions, maximum=20):
-            errors.append(
-                f"{path}.exclude_terms must contain 1 to 20 unique non-empty terms"
-            )
+            errors.append(f"{path}.exclude_terms must contain 1 to 20 unique non-empty terms")
 
         variants = profile.get("variants")
         if not isinstance(variants, list) or not variants:
@@ -127,18 +122,14 @@ def validate_search_profiles(
                 errors.append(f"{variant_path} must be a mapping")
                 continue
             if set(variant) != VARIANT_FIELDS:
-                errors.append(
-                    f"{variant_path} must define title_phrase and skill_ids"
-                )
+                errors.append(f"{variant_path} must define title_phrase and skill_ids")
             if not _bounded_text(variant.get("title_phrase"), 120):
                 errors.append(
                     f"{variant_path}.title_phrase must be non-empty text up to 120 characters"
                 )
             skill_ids = variant.get("skill_ids")
             if not _id_list(skill_ids, maximum=5):
-                errors.append(
-                    f"{variant_path}.skill_ids must contain 1 to 5 unique skill IDs"
-                )
+                errors.append(f"{variant_path}.skill_ids must contain 1 to 5 unique skill IDs")
                 continue
             title_phrase = variant.get("title_phrase")
             if isinstance(title_phrase, str):
@@ -150,19 +141,13 @@ def validate_search_profiles(
             for skill_id in skill_ids:
                 skill = skills.get(skill_id)
                 if skill is None:
-                    errors.append(
-                        f"{variant_path}.skill_ids references unknown skill {skill_id}"
-                    )
+                    errors.append(f"{variant_path}.skill_ids references unknown skill {skill_id}")
                     continue
                 if skill.get("level") not in SEARCHABLE_LEVELS:
-                    errors.append(
-                        f"{variant_path}.skill_ids {skill_id} lacks verified evidence"
-                    )
+                    errors.append(f"{variant_path}.skill_ids {skill_id} lacks verified evidence")
                 skill_aliases = aliases.get(skill_id)
                 if not isinstance(skill_aliases, list) or not skill_aliases:
-                    errors.append(
-                        f"{variant_path}.skill_ids {skill_id} has no search alias"
-                    )
+                    errors.append(f"{variant_path}.skill_ids {skill_id} has no search alias")
     return errors
 
 
@@ -224,7 +209,7 @@ def _bounded_text(value: Any, maximum: int) -> bool:
     )
 
 
-def _id_list(value: Any, maximum: int) -> bool:
+def _id_list(value: Any, maximum: int) -> TypeGuard[list[str]]:
     return (
         isinstance(value, list)
         and 1 <= len(value) <= maximum

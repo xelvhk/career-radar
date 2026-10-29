@@ -10,9 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from career_radar.validation import load_yaml, validate_dataset  # noqa: E402
 from career_radar.matching_config import validate_matching_config  # noqa: E402
 from career_radar.search_profiles import validate_search_profiles  # noqa: E402
+from career_radar.validation import load_yaml, validate_dataset  # noqa: E402
 
 
 def main() -> int:
@@ -28,26 +28,21 @@ def main() -> int:
 
     issues = validate_dataset(projects, skills, goals)
     matching_errors = validate_matching_config(matching, skills, goals)
-    search_profile_errors = validate_search_profiles(
-        search_profiles, skills, goals, matching
-    )
+    search_profile_errors = validate_search_profiles(search_profiles, skills, goals, matching)
     if issues:
         for issue in issues:
             print(f"ERROR {issue.path}: {issue.message}")
         print(f"Validation failed with {len(issues)} issue(s).")
         return 1
     if matching_errors:
-        for error in matching_errors:
-            print(f"ERROR matching: {error}")
+        for matching_error in matching_errors:
+            print(f"ERROR matching: {matching_error}")
         print(f"Validation failed with {len(matching_errors)} matching issue(s).")
         return 1
     if search_profile_errors:
-        for error in search_profile_errors:
-            print(f"ERROR search profiles: {error}")
-        print(
-            "Validation failed with "
-            f"{len(search_profile_errors)} search profile issue(s)."
-        )
+        for profile_error in search_profile_errors:
+            print(f"ERROR search profiles: {profile_error}")
+        print(f"Validation failed with {len(search_profile_errors)} search profile issue(s).")
         return 1
 
     project_count = len(projects["projects"])

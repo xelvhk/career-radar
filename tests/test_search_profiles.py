@@ -1,13 +1,12 @@
 import copy
 import unittest
 
-from career_radar.validation import load_yaml
 from career_radar.search_profiles import (
     compile_search_queries,
     parse_search_profiles,
     validate_search_profiles,
 )
-
+from career_radar.validation import load_yaml
 from tests.test_repository_data import ROOT
 
 
@@ -39,9 +38,7 @@ class SearchProfileTests(unittest.TestCase):
 
         errors = validate_search_profiles(data, self.skills, self.goals, self.matching)
 
-        self.assertTrue(
-            any("aws" in error and "verified evidence" in error for error in errors)
-        )
+        self.assertTrue(any("aws" in error and "verified evidence" in error for error in errors))
 
     def test_rejects_unknown_roles_skills_and_duplicate_profile_ids(self) -> None:
         data = copy.deepcopy(load_yaml(ROOT / "search_profiles.yaml"))
@@ -78,6 +75,7 @@ class SearchProfileTests(unittest.TestCase):
 
         self.assertTrue(any("unknown target role" in error for error in errors))
         self.assertTrue(any("unknown skill" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

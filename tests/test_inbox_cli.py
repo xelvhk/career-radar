@@ -175,8 +175,7 @@ class InboxCliTests(unittest.TestCase):
             database = temp / "inbox.sqlite3"
             vacancy = temp / "vacancy.txt"
             vacancy.write_text(
-                "AI [click](https://example.test) | Engineer\n"
-                "Requirements:\n- Python\n",
+                "AI [click](https://example.test) | Engineer\nRequirements:\n- Python\n",
                 encoding="utf-8",
             )
             imported = self._run(

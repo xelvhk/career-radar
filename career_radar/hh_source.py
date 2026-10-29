@@ -7,16 +7,16 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 import yaml
 
 from .collected_vacancy import CollectedVacancy, CollectedVacancyInput, normalize_collected_vacancy
 from .search_profiles import CompiledSearchQuery
-
 
 CONFIG_SCHEMA_VERSION = 1
 MAX_CONFIG_BYTES = 16_000
@@ -80,15 +80,25 @@ class HeadHunterTransport:
                 raise SourceRequestError("HeadHunter returned an unsafe redirect") from error
             if error.code == 429:
                 retry_after = error.headers.get("Retry-After") if error.headers else None
-                if isinstance(retry_after, str) and retry_after.isdigit() and int(retry_after) <= 86_400:
-                    message = f"HeadHunter rate limit reached; try again in {int(retry_after)} seconds"
+                if (
+                    isinstance(retry_after, str)
+                    and retry_after.isdigit()
+                    and int(retry_after) <= 86_400
+                ):
+                    message = (
+                        f"HeadHunter rate limit reached; try again in {int(retry_after)} seconds"
+                    )
                 else:
                     message = "HeadHunter rate limit reached; try again later"
                 raise SourceRequestError(message) from error
             if error.code in {401, 403}:
-                raise SourceRequestError("HeadHunter rejected the application authorization") from error
+                raise SourceRequestError(
+                    "HeadHunter rejected the application authorization"
+                ) from error
             if error.code == 404:
-                raise VacancyUnavailableError("HeadHunter vacancy is no longer available") from error
+                raise VacancyUnavailableError(
+                    "HeadHunter vacancy is no longer available"
+                ) from error
             if error.code == 400:
                 raise SourceRequestError("HeadHunter rejected the search request") from error
             raise SourceRequestError(SAFE_MESSAGE) from error
@@ -126,7 +136,7 @@ class HeadHunterAdapter:
             raise ValueError("per_page must be between 1 and 10")
         self.config = config
         self.transport = transport or HeadHunterTransport()
-        self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.clock = clock or (lambda: datetime.now(UTC))
         self.per_page = per_page
 
     def collect(self, query: CompiledSearchQuery) -> CollectionBatch:
@@ -259,7 +269,11 @@ def _normalize_detail(
     title = detail.get("name")
     description = detail.get("description")
     source_url = detail.get("alternate_url")
-    if not all(isinstance(value, str) for value in (title, description, source_url)):
+    if (
+        not isinstance(title, str)
+        or not isinstance(description, str)
+        or not isinstance(source_url, str)
+    ):
         raise SourceRequestError("HeadHunter returned an invalid vacancy response")
     try:
         record = normalize_collected_vacancy(

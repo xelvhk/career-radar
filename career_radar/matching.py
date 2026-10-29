@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from .matching_config import MatchingConfig
 from .vacancy import Vacancy, VacancyRequirement, parse_vacancy
-
 
 EVIDENCE_CREDIT = {"public": 1.0, "on_request": 0.7, "private": 0.0, "gap": 0.0}
 TECHNICAL_CREDIT = {
@@ -62,9 +62,7 @@ def analyze_vacancy(
     config: MatchingConfig,
 ) -> MatchReport:
     vacancy = parse_vacancy(text, config)
-    projects = {
-        project["id"]: project for project in projects_data["projects"]
-    }
+    projects = {project["id"]: project for project in projects_data["projects"]}
     skills = {skill["id"]: skill for skill in skills_data["skills"]}
     mappings = tuple(
         _map_requirement(requirement, skills[requirement.skill_id], projects)
@@ -135,10 +133,7 @@ def _map_requirement(
             if not artifact or artifact.get("verification") != "verified":
                 continue
             disclosure = artifact["disclosure"]
-            if (
-                disclosure == "public"
-                and project["repository_visibility"] != "public"
-            ):
+            if disclosure == "public" and project["repository_visibility"] != "public":
                 disclosure = "private"
             if DISCLOSURE_RANK[disclosure] > DISCLOSURE_RANK[status]:
                 status = disclosure
@@ -187,9 +182,7 @@ def _weighted_requirement_score(
     credit: Callable[[RequirementMapping], float],
 ) -> int:
     denominator = sum(IMPORTANCE_WEIGHT[item.importance] for item in mappings)
-    numerator = sum(
-        IMPORTANCE_WEIGHT[item.importance] * credit(item) for item in mappings
-    )
+    numerator = sum(IMPORTANCE_WEIGHT[item.importance] * credit(item) for item in mappings)
     return round(100 * numerator / denominator) if denominator else 0
 
 
@@ -241,15 +234,11 @@ def _location_dimension(
     return _known_dimension("location", score, config, "remote-work preference match")
 
 
-def _known_dimension(
-    name: str, score: int, config: MatchingConfig, reason: str
-) -> MatchDimension:
+def _known_dimension(name: str, score: int, config: MatchingConfig, reason: str) -> MatchDimension:
     return MatchDimension(name, "known", score, config.weights[name], reason)
 
 
-def _unknown_dimension(
-    name: str, config: MatchingConfig, reason: str
-) -> MatchDimension:
+def _unknown_dimension(name: str, config: MatchingConfig, reason: str) -> MatchDimension:
     return MatchDimension(name, "unknown", None, config.weights[name], reason)
 
 
@@ -268,12 +257,12 @@ def _recommend(
     ):
         return "APPLY", ("high match with sufficient confidence and no required gaps",)
     if unverified_constraints:
-        reasons = ["mandatory career constraints are not verified"]
+        constraint_reasons = ["mandatory career constraints are not verified"]
         if required_gaps:
-            reasons.append("required skill gaps need human review")
+            constraint_reasons.append("required skill gaps need human review")
         if confidence < config.minimum_confidence:
-            reasons.append("confidence is below the automatic-decision threshold")
-        return "REVIEW", tuple(reasons)
+            constraint_reasons.append("confidence is below the automatic-decision threshold")
+        return "REVIEW", tuple(constraint_reasons)
     if score < config.skip_score and confidence >= config.minimum_confidence:
         return "SKIP", ("low match with sufficient confidence",)
     reasons: list[str] = []
@@ -286,22 +275,16 @@ def _recommend(
     return "REVIEW", tuple(reasons)
 
 
-def _unverified_constraints(
-    vacancy: Vacancy, goals: dict[str, Any]
-) -> tuple[str, ...]:
+def _unverified_constraints(vacancy: Vacancy, goals: dict[str, Any]) -> tuple[str, ...]:
     constraints: list[str] = []
     profile = goals.get("experience_profile", {})
     years = profile.get("commercial_years") if isinstance(profile, dict) else None
     if vacancy.minimum_years_experience is not None and (
         type(years) is not int or years < vacancy.minimum_years_experience
     ):
-        constraints.append(
-            f"minimum_years_experience:{vacancy.minimum_years_experience}"
-        )
+        constraints.append(f"minimum_years_experience:{vacancy.minimum_years_experience}")
     has_production = (
-        profile.get("verified_production_experience")
-        if isinstance(profile, dict)
-        else None
+        profile.get("verified_production_experience") if isinstance(profile, dict) else None
     )
     if vacancy.requires_production_experience and has_production is not True:
         constraints.append("production_experience")

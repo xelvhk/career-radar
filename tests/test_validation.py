@@ -55,9 +55,7 @@ def valid_dataset(
         "schema_version": 2,
         "career_goals": {
             "horizon_months": 12,
-            "target_roles": [
-                {"id": "ai-engineer", "name": "AI Engineer", "priority": "high"}
-            ],
+            "target_roles": [{"id": "ai-engineer", "name": "AI Engineer", "priority": "high"}],
             "preferred_domains": [],
             "work_preferences": {
                 "remote": "preferred",
@@ -115,8 +113,7 @@ class ValidationTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                issue.path == "skills[0].level"
-                and "verified public artifact" in issue.message
+                issue.path == "skills[0].level" and "verified public artifact" in issue.message
                 for issue in issues
             )
         )
@@ -130,8 +127,7 @@ class ValidationTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                issue.path == "skills[0].level"
-                and "verified artifact" in issue.message
+                issue.path == "skills[0].level" and "verified artifact" in issue.message
                 for issue in issues
             )
         )
@@ -144,8 +140,7 @@ class ValidationTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                issue.path == "skills[0].level"
-                and "production context" in issue.message
+                issue.path == "skills[0].level" and "production context" in issue.message
                 for issue in issues
             )
         )

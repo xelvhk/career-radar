@@ -16,15 +16,11 @@ def report_to_dict(report: MatchReport) -> dict[str, Any]:
             "seniority": report.vacancy.seniority,
             "isRemote": report.vacancy.is_remote,
             "minimumYearsExperience": report.vacancy.minimum_years_experience,
-            "requiresProductionExperience": (
-                report.vacancy.requires_production_experience
-            ),
+            "requiresProductionExperience": (report.vacancy.requires_production_experience),
             "locationConstraints": list(report.vacancy.location_constraints),
             "targetRoles": list(report.vacancy.target_roles),
             "domains": list(report.vacancy.domains),
-            "unmappedRequirementLines": list(
-                report.vacancy.unmapped_requirement_lines
-            ),
+            "unmappedRequirementLines": list(report.vacancy.unmapped_requirement_lines),
         },
         "overallScore": report.overall_score,
         "confidence": report.confidence,
@@ -74,12 +70,20 @@ def report_to_markdown(report: MatchReport) -> str:
         "",
     ]
     lines.extend(f"- {_escape_markdown(reason)}." for reason in report.reasons)
-    lines.extend(["", "## Dimensions", "", "| Dimension | Score | Weight | Explanation |", "|---|---:|---:|---|"])
-    for item in report.dimensions:
-        score = f"{item.score}%" if item.score is not None else "unknown"
+    lines.extend(
+        [
+            "",
+            "## Dimensions",
+            "",
+            "| Dimension | Score | Weight | Explanation |",
+            "|---|---:|---:|---|",
+        ]
+    )
+    for dimension in report.dimensions:
+        score = f"{dimension.score}%" if dimension.score is not None else "unknown"
         lines.append(
-            f"| {_escape_markdown(item.name)} | {score} | {item.weight} | "
-            f"{_escape_markdown(item.reason)} |"
+            f"| {_escape_markdown(dimension.name)} | {score} | {dimension.weight} | "
+            f"{_escape_markdown(dimension.reason)} |"
         )
 
     lines.extend(
@@ -92,12 +96,12 @@ def report_to_markdown(report: MatchReport) -> str:
         ]
     )
     if report.requirement_mappings:
-        for item in report.requirement_mappings:
-            projects = _escape_markdown(", ".join(item.projects) or "none")
+        for mapping in report.requirement_mappings:
+            projects = _escape_markdown(", ".join(mapping.projects) or "none")
             lines.append(
-                f"| {_escape_markdown(item.skill_name)} | "
-                f"{_escape_markdown(item.importance)} | "
-                f"{_escape_markdown(item.evidence_status)} | {projects} |"
+                f"| {_escape_markdown(mapping.skill_name)} | "
+                f"{_escape_markdown(mapping.importance)} | "
+                f"{_escape_markdown(mapping.evidence_status)} | {projects} |"
             )
     else:
         lines.append("| none recognized | — | gap | none |")
@@ -107,14 +111,11 @@ def report_to_markdown(report: MatchReport) -> str:
         lines.extend(f"- `{skill_id}`" for skill_id in report.required_gaps)
     if report.unverified_constraints:
         lines.extend(["", "## Unverified mandatory constraints", ""])
-        lines.extend(
-            f"- `{constraint}`" for constraint in report.unverified_constraints
-        )
+        lines.extend(f"- `{constraint}`" for constraint in report.unverified_constraints)
     if report.vacancy.unmapped_requirement_lines:
         lines.extend(["", "## Unmapped requirement lines", ""])
         lines.extend(
-            f"- {_escape_markdown(line)}"
-            for line in report.vacancy.unmapped_requirement_lines
+            f"- {_escape_markdown(line)}" for line in report.vacancy.unmapped_requirement_lines
         )
     return "\n".join(lines) + "\n"
 

@@ -6,7 +6,6 @@ from pathlib import Path
 from career_radar.matching import analyze_vacancy
 from career_radar.matching_config import load_matching_config
 from career_radar.validation import load_yaml
-
 from tests.test_repository_data import ROOT
 
 
@@ -74,9 +73,7 @@ class LocalProfileTests(unittest.TestCase):
         from career_radar.local_profile import LocalProfile, apply_local_profile
 
         goals = copy.deepcopy(self.goals)
-        goals["career_goals"]["experience_profile"] = {
-            "verified_production_experience": True
-        }
+        goals["career_goals"]["experience_profile"] = {"verified_production_experience": True}
         profile = LocalProfile(
             commercial_years=3,
             confirmed_production_experience=None,

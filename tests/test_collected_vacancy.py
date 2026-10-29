@@ -1,6 +1,6 @@
 import re
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from career_radar import (
     CollectedVacancy,
@@ -9,8 +9,7 @@ from career_radar import (
     normalize_collected_vacancy,
 )
 
-
-UTC_TIME = datetime(2026, 8, 22, 9, 30, tzinfo=timezone.utc)
+UTC_TIME = datetime(2026, 8, 22, 9, 30, tzinfo=UTC)
 
 
 class CollectedVacancyTests(unittest.TestCase):
@@ -20,9 +19,7 @@ class CollectedVacancyTests(unittest.TestCase):
                 source="hh",
                 source_vacancy_id=" 12345 ",
                 source_url="https://hh.ru/vacancy/12345#description",
-                retrieved_at=datetime(
-                    2026, 8, 22, 12, 30, tzinfo=timezone(timedelta(hours=3))
-                ),
+                retrieved_at=datetime(2026, 8, 22, 12, 30, tzinfo=timezone(timedelta(hours=3))),
                 collection_method="api",
                 title="  Python Backend Engineer  ",
                 description="  FastAPI and PostgreSQL\n  ",
@@ -70,9 +67,7 @@ class CollectedVacancyTests(unittest.TestCase):
         )
 
         self.assertEqual(first.id, second.id)
-        self.assertEqual(
-            first.source_url, "https://hh.ru/vacancy/12345?from=search"
-        )
+        self.assertEqual(first.source_url, "https://hh.ru/vacancy/12345?from=search")
 
     def test_manual_text_identity_normalizes_case_and_whitespace(self) -> None:
         first = self._normalize(
@@ -130,14 +125,19 @@ class CollectedVacancyTests(unittest.TestCase):
             ({"collection_method": "scraper"}, "collection_method must be one of"),
             ({"retrieved_at": datetime(2026, 8, 22, 9, 30)}, "retrieved_at must be timezone-aware"),
             ({"source_url": "http://hh.ru/vacancy/12345"}, "source_url must use HTTPS"),
-            ({"source_url": "https://user:secret@hh.ru/vacancy/12345"}, "source_url must not contain credentials"),
+            (
+                {"source_url": "https://user:secret@hh.ru/vacancy/12345"},
+                "source_url must not contain credentials",
+            ),
             ({"title": "   "}, "title must be non-empty"),
             ({"description": "x" * 200_001}, "description exceeds the 200000 character limit"),
         )
         for changes, message in invalid_cases:
-            with self.subTest(changes=changes):
-                with self.assertRaisesRegex(ValueError, re.escape(message)):
-                    self._normalize(**changes)
+            with (
+                self.subTest(changes=changes),
+                self.assertRaisesRegex(ValueError, re.escape(message)),
+            ):
+                self._normalize(**changes)
 
     def test_non_manual_collection_requires_a_source_locator(self) -> None:
         with self.assertRaisesRegex(

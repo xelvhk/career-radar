@@ -5,11 +5,11 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from urllib.parse import urlparse
-
 
 PROJECT_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -52,20 +52,18 @@ def audit_sources(
         if isinstance(project, dict) and isinstance(project.get("id"), str)
     }
     for project_id in sorted(repositories.keys() - known_ids):
-        issues.append(
-            SourceAuditIssue(project_id, None, "mapping references an unknown project")
-        )
+        issues.append(SourceAuditIssue(project_id, None, "mapping references an unknown project"))
 
     for project in projects:
         if not isinstance(project, dict):
             continue
-        project_id = project.get("id")
-        if not isinstance(project_id, str):
+        current_project_id = project.get("id")
+        if not isinstance(current_project_id, str):
             continue
-        repository = repositories.get(project_id)
+        repository = repositories.get(current_project_id)
         if repository is None:
             issues.append(
-                SourceAuditIssue(project_id, None, "repository path was not provided")
+                SourceAuditIssue(current_project_id, None, "repository path was not provided")
             )
             continue
         issues.extend(_audit_project(project, repository))
@@ -94,12 +92,8 @@ def _audit_project(project: dict[str, Any], repository: Path) -> list[SourceAudi
     expected_origin = project.get("repository_url")
     if not origin.ok:
         issues.append(SourceAuditIssue(project_id, None, "origin remote is missing"))
-    elif _normalize_repository_url(origin.stdout) != _normalize_repository_url(
-        expected_origin
-    ):
-        issues.append(
-            SourceAuditIssue(project_id, None, "origin does not match repository_url")
-        )
+    elif _normalize_repository_url(origin.stdout) != _normalize_repository_url(expected_origin):
+        issues.append(SourceAuditIssue(project_id, None, "origin does not match repository_url"))
 
     head = _git(repository, "rev-parse", "HEAD")
     pinned_commit = project.get("source_commit")
@@ -107,9 +101,7 @@ def _audit_project(project: dict[str, Any], repository: Path) -> list[SourceAudi
         issues.append(SourceAuditIssue(project_id, None, "cannot resolve repository HEAD"))
         return issues
     if head.stdout != pinned_commit:
-        issues.append(
-            SourceAuditIssue(project_id, None, "HEAD does not match source_commit")
-        )
+        issues.append(SourceAuditIssue(project_id, None, "HEAD does not match source_commit"))
 
     artifacts = project.get("artifacts")
     if not isinstance(artifacts, list):

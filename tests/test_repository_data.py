@@ -1,11 +1,10 @@
-import unittest
 import subprocess
 import sys
+import unittest
 from pathlib import Path
 
 from career_radar.matching_config import validate_matching_config
 from career_radar.validation import load_yaml, validate_dataset
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,8 +28,12 @@ class RepositoryDataTests(unittest.TestCase):
         self.assertEqual(sum(len(project["artifacts"]) for project in projects), 49)
         self.assertEqual(projects_by_id["contractops-ai"]["evidence_access"], "on_request")
         self.assertEqual(projects_by_id["onboardica"]["evidence_access"], "on_request")
-        self.assertEqual(projects_by_id["onboardica-public-case-study"]["evidence_access"], "public")
-        self.assertEqual(projects_by_id["onboardica-public-case-study"]["repository_visibility"], "public")
+        self.assertEqual(
+            projects_by_id["onboardica-public-case-study"]["evidence_access"], "public"
+        )
+        self.assertEqual(
+            projects_by_id["onboardica-public-case-study"]["repository_visibility"], "public"
+        )
         self.assertEqual(projects_by_id["vasya-ai"]["evidence_access"], "public")
         self.assertNotIn("production", {skill["level"] for skill in skills})
 

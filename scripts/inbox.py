@@ -5,14 +5,13 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from career_radar.opportunity_service import OpportunityImporter  # noqa: E402
 from career_radar.opportunity_reporting import (  # noqa: E402
     import_result_to_json,
     import_result_to_markdown,
@@ -21,8 +20,8 @@ from career_radar.opportunity_reporting import (  # noqa: E402
     opportunity_to_json,
     opportunity_to_markdown,
 )
+from career_radar.opportunity_service import OpportunityImporter  # noqa: E402
 from career_radar.opportunity_store import OpportunityStore  # noqa: E402
-
 
 DEFAULT_DATABASE = ROOT / "career_radar.local.sqlite3"
 
@@ -55,12 +54,8 @@ def _parser() -> argparse.ArgumentParser:
     _add_common_arguments(import_command)
 
     list_command = commands.add_parser("list", help="list ranked opportunities")
-    list_command.add_argument(
-        "--recommendation", choices=("APPLY", "REVIEW", "SKIP")
-    )
-    list_command.add_argument(
-        "--status", choices=("new", "shortlisted", "dismissed")
-    )
+    list_command.add_argument("--recommendation", choices=("APPLY", "REVIEW", "SKIP"))
+    list_command.add_argument("--status", choices=("new", "shortlisted", "dismissed"))
     list_command.add_argument("--limit", type=_limit, default=20)
     _add_common_arguments(list_command)
 
@@ -68,22 +63,16 @@ def _parser() -> argparse.ArgumentParser:
     show_command.add_argument("vacancy_id")
     _add_common_arguments(show_command)
 
-    status_command = commands.add_parser(
-        "set-status", help="record a human inbox decision"
-    )
+    status_command = commands.add_parser("set-status", help="record a human inbox decision")
     status_command.add_argument("vacancy_id")
-    status_command.add_argument(
-        "status", choices=("new", "shortlisted", "dismissed")
-    )
+    status_command.add_argument("status", choices=("new", "shortlisted", "dismissed"))
     _add_common_arguments(status_command)
     return parser
 
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
-    parser.add_argument(
-        "--format", choices=("markdown", "json"), default="markdown"
-    )
+    parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
 
 
 def _dispatch(arguments: argparse.Namespace) -> str:
@@ -119,15 +108,13 @@ def _dispatch(arguments: argparse.Namespace) -> str:
 def _import(arguments: argparse.Namespace) -> str:
     text = _read_vacancy(arguments.vacancy)
     retrieved_at = _retrieved_at(arguments.retrieved_at)
-    result = OpportunityImporter(
-        ROOT, arguments.db, profile=arguments.profile
-    ).import_text(
+    result = OpportunityImporter(ROOT, arguments.db, profile=arguments.profile).import_text(
         text,
         source=arguments.source,
         source_vacancy_id=arguments.source_id,
         source_url=arguments.source_url,
         retrieved_at=retrieved_at,
-        matched_at=datetime.now(timezone.utc),
+        matched_at=datetime.now(UTC),
     )
     return (
         import_result_to_json(result)
@@ -154,14 +141,14 @@ def _read_vacancy(path: Path) -> str:
 
 def _retrieved_at(value: str | None) -> datetime:
     if value is None:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as error:
         raise ValueError("retrieved_at must be an RFC 3339 timestamp") from error
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("retrieved_at must include a timezone")
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def _limit(value: str) -> int:

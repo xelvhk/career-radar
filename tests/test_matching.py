@@ -4,7 +4,6 @@ import unittest
 from career_radar.matching import analyze_vacancy
 from career_radar.matching_config import load_matching_config, validate_matching_config
 from career_radar.validation import load_yaml
-
 from tests.test_repository_data import ROOT
 
 
@@ -14,9 +13,7 @@ class VacancyMatchingTests(unittest.TestCase):
         cls.projects = load_yaml(ROOT / "projects.yaml")
         cls.skills = load_yaml(ROOT / "skills.yaml")
         cls.goals = load_yaml(ROOT / "career_goals.yaml")
-        cls.config = load_matching_config(
-            ROOT / "matching.yaml", cls.skills, cls.goals
-        )
+        cls.config = load_matching_config(ROOT / "matching.yaml", cls.skills, cls.goals)
 
     def analyze(self, text: str):
         return analyze_vacancy(
@@ -28,9 +25,7 @@ class VacancyMatchingTests(unittest.TestCase):
         )
 
     def test_maps_public_on_request_and_gap_evidence(self) -> None:
-        report = self.analyze(
-            "AI Backend Engineer\nRequirements:\n- Python\n- RAG\n- AWS\n"
-        )
+        report = self.analyze("AI Backend Engineer\nRequirements:\n- Python\n- RAG\n- AWS\n")
 
         mappings = {item.skill_id: item for item in report.requirement_mappings}
         self.assertEqual(mappings["python"].evidence_status, "public")
@@ -101,9 +96,7 @@ class VacancyMatchingTests(unittest.TestCase):
         python = next(item for item in skills["skills"] if item["id"] == "python")
         python["level"] = "practical"
         python["evidence"] = [python["evidence"][0]]
-        contractops = next(
-            item for item in projects["projects"] if item["id"] == "contractops-ai"
-        )
+        contractops = next(item for item in projects["projects"] if item["id"] == "contractops-ai")
         contractops["evidence_access"] = "private"
         for artifact in contractops["artifacts"]:
             artifact["disclosure"] = "private"
@@ -137,9 +130,7 @@ class VacancyMatchingTests(unittest.TestCase):
 
     def test_unverified_constraint_never_causes_automatic_skip(self) -> None:
         report = self.analyze(
-            "Unrelated Role\n"
-            "Requirements:\n"
-            "- 10+ years of production experience\n"
+            "Unrelated Role\nRequirements:\n- 10+ years of production experience\n"
         )
 
         self.assertLess(report.overall_score, self.config.skip_score)
@@ -152,9 +143,7 @@ class VacancyMatchingTests(unittest.TestCase):
             "commercial_years": 5,
             "verified_production_experience": True,
         }
-        goals["career_goals"]["work_preferences"]["current_country_codes"] = [
-            "US"
-        ]
+        goals["career_goals"]["work_preferences"]["current_country_codes"] = ["US"]
 
         report = analyze_vacancy(
             "AI Backend Engineer\n"

@@ -44,9 +44,7 @@ class SourceAuditTests(unittest.TestCase):
         self.temporary_directory.cleanup()
 
     def test_accepts_a_clean_repository_at_the_pinned_commit(self) -> None:
-        issues = audit_sources(
-            self.projects, {"example-project": self.repository}
-        )
+        issues = audit_sources(self.projects, {"example-project": self.repository})
 
         self.assertEqual(issues, [])
 
@@ -57,18 +55,13 @@ class SourceAuditTests(unittest.TestCase):
         issues = audit_sources(projects, {"example-project": self.repository})
 
         self.assertTrue(
-            any(
-                issue.path == "missing.py" and "pinned commit" in issue.message
-                for issue in issues
-            )
+            any(issue.path == "missing.py" and "pinned commit" in issue.message for issue in issues)
         )
 
     def test_rejects_a_modified_artifact(self) -> None:
         (self.repository / "README.md").write_text("changed\n", encoding="utf-8")
 
-        issues = audit_sources(
-            self.projects, {"example-project": self.repository}
-        )
+        issues = audit_sources(self.projects, {"example-project": self.repository})
 
         self.assertTrue(
             any(
@@ -85,10 +78,7 @@ class SourceAuditTests(unittest.TestCase):
         issues = audit_sources(projects, {"example-project": self.repository})
 
         self.assertTrue(
-            any(
-                issue.path == "new.py" and "not tracked" in issue.message
-                for issue in issues
-            )
+            any(issue.path == "new.py" and "not tracked" in issue.message for issue in issues)
         )
 
     def test_rejects_a_different_head_commit(self) -> None:
@@ -96,9 +86,7 @@ class SourceAuditTests(unittest.TestCase):
         git(self.repository, "add", "SECOND.md")
         git(self.repository, "commit", "-q", "-m", "second commit")
 
-        issues = audit_sources(
-            self.projects, {"example-project": self.repository}
-        )
+        issues = audit_sources(self.projects, {"example-project": self.repository})
 
         self.assertTrue(any("HEAD does not match" in issue.message for issue in issues))
 
@@ -111,16 +99,16 @@ class SourceAuditTests(unittest.TestCase):
             "https://github.com/example/different-project.git",
         )
 
-        issues = audit_sources(
-            self.projects, {"example-project": self.repository}
-        )
+        issues = audit_sources(self.projects, {"example-project": self.repository})
 
         self.assertTrue(any("origin does not match" in issue.message for issue in issues))
 
     def test_requires_a_path_mapping_for_each_project(self) -> None:
         issues = audit_sources(self.projects, {})
 
-        self.assertTrue(any("repository path was not provided" in issue.message for issue in issues))
+        self.assertTrue(
+            any("repository path was not provided" in issue.message for issue in issues)
+        )
 
     def test_parse_repository_args_rejects_duplicates_and_relative_paths(self) -> None:
         with self.assertRaisesRegex(ValueError, "absolute"):

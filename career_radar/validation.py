@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 
 import yaml
 
-
 SCHEMA_VERSION = 2
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
@@ -79,9 +78,7 @@ def validate_dataset(
         _required_text(project, "name", path, issues)
         _required_text(project, "summary", path, issues)
         _https_url(project, "repository_url", path, issues)
-        visibility = _enum(
-            project, "repository_visibility", REPOSITORY_VISIBILITIES, path, issues
-        )
+        visibility = _enum(project, "repository_visibility", REPOSITORY_VISIBILITIES, path, issues)
         access = _enum(project, "evidence_access", DISCLOSURE_STATES, path, issues)
         _commit(project, "source_commit", path, issues)
         _date(project, "verified_at", path, issues)
@@ -127,13 +124,10 @@ def validate_dataset(
             project_id = item.get("project_id")
             if project_id not in project_ids:
                 issues.append(
-                    ValidationIssue(
-                        f"{evidence_path}.project_id", "references an unknown project"
-                    )
+                    ValidationIssue(f"{evidence_path}.project_id", "references an unknown project")
                 )
-            context = _enum(
-                item, "experience_context", EXPERIENCE_CONTEXTS, evidence_path, issues
-            )
+            project_key = project_id if isinstance(project_id, str) else ""
+            context = _enum(item, "experience_context", EXPERIENCE_CONTEXTS, evidence_path, issues)
             if context == "production":
                 _required_text(item, "production_note", evidence_path, issues)
 
@@ -149,7 +143,7 @@ def validate_dataset(
                 )
                 artifact_refs = []
 
-            known_artifacts = project_artifacts.get(project_id, {})
+            known_artifacts = project_artifacts.get(project_key, {})
             referenced_metadata: list[ArtifactMetadata] = []
             for artifact_index, artifact_ref in enumerate(artifact_refs):
                 metadata = known_artifacts.get(artifact_ref)
@@ -163,23 +157,21 @@ def validate_dataset(
                 else:
                     referenced_metadata.append(metadata)
 
-            verified = any(
-                metadata.verification == "verified" for metadata in referenced_metadata
+            verified = any(metadata.verification == "verified" for metadata in referenced_metadata)
+            verified_public = (
+                any(
+                    metadata.verification == "verified" and metadata.disclosure == "public"
+                    for metadata in referenced_metadata
+                )
+                and project_visibilities.get(project_key) == "public"
             )
-            verified_public = any(
-                metadata.verification == "verified"
-                and metadata.disclosure == "public"
-                for metadata in referenced_metadata
-            ) and project_visibilities.get(project_id) == "public"
             has_verified |= verified
             has_verified_public |= verified_public
             has_production_context |= context == "production" and verified
 
         if level in {"practical", "public_evidence", "production"} and not has_verified:
             issues.append(
-                ValidationIssue(
-                    f"{path}.level", f"{level} requires at least one verified artifact"
-                )
+                ValidationIssue(f"{path}.level", f"{level} requires at least one verified artifact")
             )
         if level == "public_evidence" and not has_verified_public:
             issues.append(
@@ -220,18 +212,12 @@ def _validate_artifacts(
         artifact_path = artifact.get("path")
         if not _is_safe_relative_path(artifact_path):
             issues.append(
-                ValidationIssue(
-                    f"{path}.path", "must be a normalized relative POSIX path"
-                )
+                ValidationIssue(f"{path}.path", "must be a normalized relative POSIX path")
             )
         elif artifact_path in artifacts:
-            issues.append(
-                ValidationIssue(f"{path}.path", "must be unique within project")
-            )
+            issues.append(ValidationIssue(f"{path}.path", "must be unique within project"))
         _required_text(artifact, "kind", path, issues)
-        verification = _enum(
-            artifact, "verification", VERIFICATION_STATES, path, issues
-        )
+        verification = _enum(artifact, "verification", VERIFICATION_STATES, path, issues)
         disclosure = _enum(artifact, "disclosure", DISCLOSURE_STATES, path, issues)
         if repository_visibility == "private" and disclosure == "public":
             issues.append(
@@ -240,14 +226,17 @@ def _validate_artifacts(
                     "an artifact in a private repository cannot be public",
                 )
             )
-        if disclosure in access_rank and evidence_access in access_rank:
-            if access_rank[disclosure] > access_rank[evidence_access]:
-                issues.append(
-                    ValidationIssue(
-                        f"{path}.disclosure",
-                        "cannot be broader than project evidence_access",
-                    )
+        if (
+            disclosure in access_rank
+            and evidence_access in access_rank
+            and access_rank[disclosure] > access_rank[evidence_access]
+        ):
+            issues.append(
+                ValidationIssue(
+                    f"{path}.disclosure",
+                    "cannot be broader than project evidence_access",
                 )
+            )
         if isinstance(artifact_path, str) and artifact_path not in artifacts:
             artifacts[artifact_path] = ArtifactMetadata(verification, disclosure)
     return artifacts
@@ -263,11 +252,7 @@ def _collection(data: dict[str, Any], key: str, issues: list[ValidationIssue]) -
 
 def _schema_version(data: dict[str, Any], path: str, issues: list[ValidationIssue]) -> None:
     if data.get("schema_version") != SCHEMA_VERSION:
-        issues.append(
-            ValidationIssue(
-                f"{path}.schema_version", f"must equal {SCHEMA_VERSION}"
-            )
-        )
+        issues.append(ValidationIssue(f"{path}.schema_version", f"must equal {SCHEMA_VERSION}"))
 
 
 def _identifier(
@@ -275,11 +260,7 @@ def _identifier(
 ) -> str | None:
     value = item.get("id")
     if not isinstance(value, str) or ID_PATTERN.fullmatch(value) is None:
-        issues.append(
-            ValidationIssue(
-                f"{path}.id", "must be a lowercase kebab-case identifier"
-            )
-        )
+        issues.append(ValidationIssue(f"{path}.id", "must be a lowercase kebab-case identifier"))
         return None
     if value in seen:
         issues.append(ValidationIssue(f"{path}.id", "must be unique"))
@@ -305,16 +286,12 @@ def _enum(
     value = item.get(key)
     if value not in allowed:
         issues.append(
-            ValidationIssue(
-                f"{path}.{key}", f"must be one of: {', '.join(sorted(allowed))}"
-            )
+            ValidationIssue(f"{path}.{key}", f"must be one of: {', '.join(sorted(allowed))}")
         )
     return value
 
 
-def _https_url(
-    item: dict[str, Any], key: str, path: str, issues: list[ValidationIssue]
-) -> None:
+def _https_url(item: dict[str, Any], key: str, path: str, issues: list[ValidationIssue]) -> None:
     value = item.get(key)
     parsed = urlparse(value) if isinstance(value, str) else None
     if (
@@ -333,19 +310,13 @@ def _https_url(
         )
 
 
-def _commit(
-    item: dict[str, Any], key: str, path: str, issues: list[ValidationIssue]
-) -> None:
+def _commit(item: dict[str, Any], key: str, path: str, issues: list[ValidationIssue]) -> None:
     value = item.get(key)
     if not isinstance(value, str) or COMMIT_PATTERN.fullmatch(value) is None:
-        issues.append(
-            ValidationIssue(f"{path}.{key}", "must be a full lowercase Git commit SHA")
-        )
+        issues.append(ValidationIssue(f"{path}.{key}", "must be a full lowercase Git commit SHA"))
 
 
-def _date(
-    item: dict[str, Any], key: str, path: str, issues: list[ValidationIssue]
-) -> None:
+def _date(item: dict[str, Any], key: str, path: str, issues: list[ValidationIssue]) -> None:
     value = item.get(key)
     try:
         date.fromisoformat(value) if isinstance(value, str) else None
@@ -373,16 +344,10 @@ def _validate_goals(value: Any, issues: list[ValidationIssue]) -> None:
         return
     horizon = value.get("horizon_months")
     if not isinstance(horizon, int) or isinstance(horizon, bool) or horizon <= 0:
-        issues.append(
-            ValidationIssue(
-                "career_goals.horizon_months", "must be a positive integer"
-            )
-        )
+        issues.append(ValidationIssue("career_goals.horizon_months", "must be a positive integer"))
     roles = value.get("target_roles")
     if not isinstance(roles, list) or not roles:
-        issues.append(
-            ValidationIssue("career_goals.target_roles", "must be a non-empty list")
-        )
+        issues.append(ValidationIssue("career_goals.target_roles", "must be a non-empty list"))
         return
     role_ids: set[str] = set()
     for index, role in enumerate(roles):

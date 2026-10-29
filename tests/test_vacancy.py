@@ -1,9 +1,8 @@
 import unittest
 
 from career_radar.matching_config import load_matching_config
-from career_radar.validation import load_yaml
 from career_radar.vacancy import parse_vacancy
-
+from career_radar.validation import load_yaml
 from tests.test_repository_data import ROOT
 
 
@@ -59,9 +58,7 @@ class VacancyParserTests(unittest.TestCase):
         pythonic_only = parse_vacancy(
             "Backend Engineer\nRequirements:\n- Pythonic design\n", self.config
         )
-        self.assertNotIn(
-            "python", {item.skill_id for item in pythonic_only.requirements}
-        )
+        self.assertNotIn("python", {item.skill_id for item in pythonic_only.requirements})
 
     def test_rejects_empty_and_oversized_text(self) -> None:
         with self.assertRaisesRegex(ValueError, "empty"):

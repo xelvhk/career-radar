@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from career_radar.panel import create_app
 from tests.test_repository_data import ROOT
 
-
 MUTATION_HEADERS = {
     "Origin": "http://127.0.0.1",
     "X-Career-Radar-Request": "1",
@@ -81,9 +80,7 @@ class PanelApiTests(unittest.TestCase):
             headers=MUTATION_HEADERS,
             json={"status": "shortlisted"},
         )
-        listed = self.client.get(
-            "/api/opportunities", params={"status": "shortlisted"}
-        )
+        listed = self.client.get("/api/opportunities", params={"status": "shortlisted"})
 
         self.assertEqual(imported.status_code, 201)
         self.assertTrue(imported.json()["created"])
@@ -194,9 +191,9 @@ class PanelApiTests(unittest.TestCase):
         finally:
             client.close()
         with closing(sqlite3.connect(self.database)) as connection:
-            stored_report = connection.execute(
-                "SELECT report_json FROM opportunities"
-            ).fetchone()[0]
+            stored_report = connection.execute("SELECT report_json FROM opportunities").fetchone()[
+                0
+            ]
 
         self.assertEqual(response.status_code, 201)
         self.assertNotIn("QZ", response.text)
@@ -212,9 +209,7 @@ class PanelApiTests(unittest.TestCase):
                 "sourceUrl": private_url,
             },
         )
-        invalid_filter = self.client.get(
-            "/api/opportunities", params={"status": "unknown"}
-        )
+        invalid_filter = self.client.get("/api/opportunities", params={"status": "unknown"})
         unknown = self.client.get("/api/opportunities/vac-" + "0" * 64)
 
         self.assertEqual(unsafe.status_code, 400)
@@ -225,9 +220,7 @@ class PanelApiTests(unittest.TestCase):
             self.assertEqual(set(response.json()), {"error"})
 
     def test_non_loopback_host_is_rejected(self) -> None:
-        response = self.client.get(
-            "/api/opportunities", headers={"Host": "career-radar.example"}
-        )
+        response = self.client.get("/api/opportunities", headers={"Host": "career-radar.example"})
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"]["code"], "INVALID_HOST")

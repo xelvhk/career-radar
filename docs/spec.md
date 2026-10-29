@@ -111,9 +111,7 @@ production context and note; source code or README files never imply it.
 
 ```python
 def validate_profile(data: dict[str, object]) -> list[ValidationIssue]:
-    return [
-        ValidationIssue(path="skills[0].id", message="must be kebab-case")
-    ]
+    return [ValidationIssue(path="skills[0].id", message="must be kebab-case")]
 ```
 
 ## Testing Strategy

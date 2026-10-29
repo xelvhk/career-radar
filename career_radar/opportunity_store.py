@@ -8,7 +8,7 @@ import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 from urllib.parse import parse_qsl, urlsplit
@@ -16,7 +16,6 @@ from urllib.parse import parse_qsl, urlsplit
 from .collected_vacancy import CollectedVacancy, CollectionMethod
 from .matching import MatchReport
 from .reporting import report_to_dict
-
 
 InboxStatus = Literal["new", "shortlisted", "dismissed"]
 Recommendation = Literal["APPLY", "REVIEW", "SKIP"]
@@ -297,16 +296,11 @@ class OpportunityStore:
         integrity = connection.execute("PRAGMA quick_check").fetchone()[0]
         if integrity != "ok":
             raise ValueError(DATABASE_ERROR)
-        columns = {
-            row[1]
-            for row in connection.execute("PRAGMA table_info(opportunities)")
-        }
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(opportunities)")}
         if not EXPECTED_COLUMNS.issubset(columns):
             raise ValueError("opportunity schema version 1 is incomplete")
 
-    def _select_one(
-        self, connection: sqlite3.Connection, vacancy_id: str
-    ) -> Opportunity:
+    def _select_one(self, connection: sqlite3.Connection, vacancy_id: str) -> Opportunity:
         row = connection.execute(
             "SELECT * FROM opportunities WHERE vacancy_id = ?", (vacancy_id,)
         ).fetchone()
@@ -365,8 +359,7 @@ def _validate_persistable_url(value: str | None) -> None:
     if value is None:
         return
     query_keys = {
-        key.casefold()
-        for key, _ in parse_qsl(urlsplit(value).query, keep_blank_values=True)
+        key.casefold() for key, _ in parse_qsl(urlsplit(value).query, keep_blank_values=True)
     }
     if query_keys & SENSITIVE_QUERY_KEYS:
         raise ValueError("source_url contains a sensitive query parameter")
@@ -382,13 +375,9 @@ def _validate_report(report: MatchReport) -> None:
 
 
 def _as_utc(value: object, field: str) -> datetime:
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() is None
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise ValueError(f"{field} must be timezone-aware")
-    return value.astimezone(timezone.utc)
+    return value.astimezone(UTC)
 
 
 def _format_time(value: datetime) -> str:

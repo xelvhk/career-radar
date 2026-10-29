@@ -9,7 +9,6 @@ from typing import Any
 
 from .validation import load_yaml
 
-
 DIMENSION_NAMES = (
     "technical",
     "evidence",
@@ -66,9 +65,7 @@ def load_matching_config(
         requirement_line_markers=_markers(data["requirement_line_markers"]),
         remote_markers=_markers(data["remote_markers"]),
         onsite_markers=_markers(data["onsite_markers"]),
-        production_experience_markers=_markers(
-            data["production_experience_markers"]
-        ),
+        production_experience_markers=_markers(data["production_experience_markers"]),
         weights=dict(data["weights"]),
         apply_score=data["thresholds"]["apply_score"],
         skip_score=data["thresholds"]["skip_score"],
@@ -111,9 +108,7 @@ def validate_matching_config(
     if not isinstance(location_constraints, dict) or not location_constraints:
         errors.append("location_constraint_aliases must be a non-empty mapping")
     else:
-        _validate_alias_values(
-            "location_constraint_aliases", location_constraints, errors
-        )
+        _validate_alias_values("location_constraint_aliases", location_constraints, errors)
 
     for key in (
         "preferred_markers",
@@ -141,9 +136,7 @@ def validate_matching_config(
     required_thresholds = {"apply_score", "skip_score", "minimum_confidence"}
     if not isinstance(thresholds, dict) or set(thresholds) != required_thresholds:
         errors.append("thresholds must define apply_score, skip_score, minimum_confidence")
-    elif not all(
-        isinstance(value, int) and 0 <= value <= 100 for value in thresholds.values()
-    ):
+    elif not all(isinstance(value, int) and 0 <= value <= 100 for value in thresholds.values()):
         errors.append("thresholds must be integer percentages")
     elif thresholds["skip_score"] >= thresholds["apply_score"]:
         errors.append("skip_score must be lower than apply_score")
@@ -170,9 +163,7 @@ def validate_matching_config(
 def _compile_alias_map(data: dict[str, list[str]]) -> tuple[tuple[str, re.Pattern[str]], ...]:
     compiled: list[tuple[str, re.Pattern[str]]] = []
     for item_id, aliases in data.items():
-        alternatives = sorted(
-            (_escaped_phrase(alias) for alias in aliases), key=len, reverse=True
-        )
+        alternatives = sorted((_escaped_phrase(alias) for alias in aliases), key=len, reverse=True)
         compiled.append(
             (item_id, re.compile(rf"(?<!\w)(?:{'|'.join(alternatives)})(?!\w)", re.IGNORECASE))
         )
@@ -195,15 +186,11 @@ def _ids(value: Any) -> set[str]:
     if not isinstance(value, list):
         return set()
     return {
-        item["id"]
-        for item in value
-        if isinstance(item, dict) and isinstance(item.get("id"), str)
+        item["id"] for item in value if isinstance(item, dict) and isinstance(item.get("id"), str)
     }
 
 
-def _validate_alias_values(
-    name: str, aliases: dict[str, Any], errors: list[str]
-) -> None:
+def _validate_alias_values(name: str, aliases: dict[str, Any], errors: list[str]) -> None:
     for item_id, values in aliases.items():
         if not _string_list(values):
             errors.append(f"{name}.{item_id} must be a non-empty list of strings")

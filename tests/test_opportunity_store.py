@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from contextlib import closing
 from dataclasses import replace
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from career_radar import OpportunityStore
@@ -15,8 +15,7 @@ from career_radar.collected_vacancy import (
 from career_radar.matching import MatchReport
 from career_radar.vacancy import Vacancy
 
-
-UTC_TIME = datetime(2026, 8, 22, 9, 30, tzinfo=timezone.utc)
+UTC_TIME = datetime(2026, 8, 22, 9, 30, tzinfo=UTC)
 
 
 class OpportunityStoreTests(unittest.TestCase):
@@ -32,10 +31,7 @@ class OpportunityStoreTests(unittest.TestCase):
 
         with closing(sqlite3.connect(self.db_path)) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            columns = {
-                row[1]
-                for row in connection.execute("PRAGMA table_info(opportunities)")
-            }
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(opportunities)")}
 
         self.assertEqual(version, 1)
         self.assertIn("vacancy_id", columns)
@@ -90,7 +86,9 @@ class OpportunityStoreTests(unittest.TestCase):
         self.assertFalse(stale.created)
         self.assertEqual(stale.opportunity, saved.opportunity)
         self.assertEqual(stale.opportunity.seen_count, 1)
-        self.assertNotIn("stale private marker", self.db_path.read_bytes().decode("utf-8", errors="ignore"))
+        self.assertNotIn(
+            "stale private marker", self.db_path.read_bytes().decode("utf-8", errors="ignore")
+        )
 
     def test_equal_timestamp_is_an_accepted_repeat_observation(self) -> None:
         store = OpportunityStore(self.db_path)
@@ -170,9 +168,7 @@ class OpportunityStoreTests(unittest.TestCase):
         store = OpportunityStore(self.db_path)
         invalid_report = replace(self._report("REVIEW", 72), overall_score=101)
 
-        with self.assertRaisesRegex(
-            ValueError, "overall_score must be between 0 and 100"
-        ):
+        with self.assertRaisesRegex(ValueError, "overall_score must be between 0 and 100"):
             store.upsert(self._vacancy(), invalid_report, UTC_TIME)
 
         self.assertEqual(store.list(), ())
@@ -217,9 +213,7 @@ class OpportunityStoreTests(unittest.TestCase):
         with closing(sqlite3.connect(incomplete)) as connection, connection:
             connection.execute("CREATE TABLE opportunities (vacancy_id TEXT)")
             connection.execute("PRAGMA user_version = 1")
-        with self.assertRaisesRegex(
-            ValueError, "opportunity schema version 1 is incomplete"
-        ):
+        with self.assertRaisesRegex(ValueError, "opportunity schema version 1 is incomplete"):
             OpportunityStore(incomplete)
 
     def _vacancy(self, **changes: object):

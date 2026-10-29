@@ -41,13 +41,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Source audit failed with {len(issues)} issue(s).")
         return 1
 
-    artifact_count = sum(
-        len(project.get("artifacts", [])) for project in projects["projects"]
-    )
-    print(
-        f"Source audit passed: {len(projects['projects'])} projects, "
-        f"{artifact_count} artifacts."
-    )
+    artifact_count = sum(len(project.get("artifacts", [])) for project in projects["projects"])
+    print(f"Source audit passed: {len(projects['projects'])} projects, {artifact_count} artifacts.")
     return 0
 
 

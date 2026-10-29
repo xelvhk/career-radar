@@ -1,10 +1,10 @@
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from career_radar.hh_source import CollectionBatch, SourceRequestError
 from career_radar.collected_vacancy import CollectedVacancyInput, normalize_collected_vacancy
+from career_radar.hh_source import CollectionBatch, SourceRequestError
 from career_radar.opportunity_service import OpportunityImporter
 from career_radar.opportunity_store import OpportunityStore
 from career_radar.scan_service import ScanService
@@ -17,7 +17,7 @@ def vacancy(identifier: str = "101"):
             source="hh",
             source_vacancy_id=identifier,
             source_url=f"https://hh.ru/vacancy/{identifier}",
-            retrieved_at=datetime(2026, 8, 28, 9, 0, tzinfo=timezone.utc),
+            retrieved_at=datetime(2026, 8, 28, 9, 0, tzinfo=UTC),
             collection_method="api",
             title="Python Backend Engineer",
             description="Python, FastAPI and PostgreSQL",
@@ -55,10 +55,12 @@ class ScanServiceTests(unittest.TestCase):
 
     def test_scan_deduplicates_variants_and_imports_through_matcher(self) -> None:
         item = vacancy()
-        adapter = FakeAdapter([
-            CollectionBatch((item,), 0),
-            CollectionBatch((item,), 1),
-        ])
+        adapter = FakeAdapter(
+            [
+                CollectionBatch((item,), 0),
+                CollectionBatch((item,), 1),
+            ]
+        )
         with tempfile.TemporaryDirectory() as directory:
             database = Path(directory) / "inbox.sqlite3"
             service = ScanService(ROOT, OpportunityImporter(ROOT, database), adapter)
@@ -74,10 +76,12 @@ class ScanServiceTests(unittest.TestCase):
         self.assertEqual(saved[0].vacancy.source, "hh")
 
     def test_one_failed_variant_is_partial_and_preserves_success(self) -> None:
-        adapter = FakeAdapter([
-            SourceRequestError("HeadHunter rate limit reached; try again later"),
-            CollectionBatch((vacancy("202"),), 0),
-        ])
+        adapter = FakeAdapter(
+            [
+                SourceRequestError("HeadHunter rate limit reached; try again later"),
+                CollectionBatch((vacancy("202"),), 0),
+            ]
+        )
         with tempfile.TemporaryDirectory() as directory:
             database = Path(directory) / "inbox.sqlite3"
             service = ScanService(ROOT, OpportunityImporter(ROOT, database), adapter)

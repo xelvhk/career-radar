@@ -8,7 +8,6 @@ from typing import Any
 
 from .opportunity_store import Opportunity, UpsertResult
 
-
 INBOX_OUTPUT_VERSION = 1
 
 
@@ -19,9 +18,7 @@ def import_result_to_json(result: UpsertResult) -> str:
             "operation": "import",
             "created": result.created,
             "stale": result.stale,
-            "opportunity": opportunity_to_dict(
-                result.opportunity, include_match_report=True
-            ),
+            "opportunity": opportunity_to_dict(result.opportunity, include_match_report=True),
         }
     )
 
@@ -31,9 +28,7 @@ def opportunity_to_json(opportunity: Opportunity, *, operation: str) -> str:
         {
             "inboxVersion": INBOX_OUTPUT_VERSION,
             "operation": operation,
-            "opportunity": opportunity_to_dict(
-                opportunity, include_match_report=True
-            ),
+            "opportunity": opportunity_to_dict(opportunity, include_match_report=True),
         }
     )
 
@@ -45,16 +40,13 @@ def opportunity_list_to_json(opportunities: tuple[Opportunity, ...]) -> str:
             "operation": "list",
             "opportunityCount": len(opportunities),
             "opportunities": [
-                opportunity_to_dict(item, include_match_report=False)
-                for item in opportunities
+                opportunity_to_dict(item, include_match_report=False) for item in opportunities
             ],
         }
     )
 
 
-def opportunity_to_dict(
-    opportunity: Opportunity, *, include_match_report: bool
-) -> dict[str, Any]:
+def opportunity_to_dict(opportunity: Opportunity, *, include_match_report: bool) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "id": opportunity.vacancy.id,
         "title": opportunity.vacancy.title,
@@ -83,15 +75,11 @@ def import_result_to_markdown(result: UpsertResult) -> str:
     return _opportunity_markdown(result.opportunity, heading="Opportunity Imported", state=state)
 
 
-def opportunity_to_markdown(
-    opportunity: Opportunity, *, heading: str = "Opportunity"
-) -> str:
+def opportunity_to_markdown(opportunity: Opportunity, *, heading: str = "Opportunity") -> str:
     return _opportunity_markdown(opportunity, heading=heading, state=None)
 
 
-def opportunity_list_to_markdown(
-    opportunities: tuple[Opportunity, ...]
-) -> str:
+def opportunity_list_to_markdown(opportunities: tuple[Opportunity, ...]) -> str:
     lines = [
         "# Opportunity Inbox",
         "",
@@ -110,9 +98,7 @@ def opportunity_list_to_markdown(
     return "\n".join(lines) + "\n"
 
 
-def _opportunity_markdown(
-    opportunity: Opportunity, *, heading: str, state: str | None
-) -> str:
+def _opportunity_markdown(opportunity: Opportunity, *, heading: str, state: str | None) -> str:
     source_url = opportunity.vacancy.source_url or "not recorded"
     source_id = opportunity.vacancy.source_vacancy_id or "not recorded"
     lines = [
@@ -146,9 +132,7 @@ def _opportunity_markdown(
     )
     report = opportunity.match_report
     reasons = _string_list(report.get("reasons"))
-    lines.extend(
-        f"- {_escape_markdown(reason)}" for reason in reasons
-    )
+    lines.extend(f"- {_escape_markdown(reason)}" for reason in reasons)
     if not reasons:
         lines.append("- No explanation recorded")
 
@@ -199,9 +183,7 @@ def _string_list(value: object) -> tuple[str, ...]:
 
 def _escape_markdown(value: str) -> str:
     safe_value = "".join(
-        character
-        for character in value
-        if ord(character) >= 32 and ord(character) != 127
+        character for character in value if ord(character) >= 32 and ord(character) != 127
     )
     escaped = safe_value.replace("\\", "\\\\")
     for character in ("`", "*", "_", "{", "}", "[", "]", "(", ")", "#", "!", "|", "<", ">"):

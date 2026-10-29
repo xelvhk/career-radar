@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -11,7 +11,6 @@ from .hh_source import HeadHunterAdapter, SourceRequestError
 from .opportunity_service import OpportunityImporter
 from .search_profiles import compile_search_queries, parse_search_profiles
 from .validation import load_yaml
-
 
 SCAN_VERSION = 1
 ScanStatus = Literal["completed", "partial", "blocked", "failed"]
@@ -79,22 +78,18 @@ class ScanService:
             load_yaml(root / "search_profiles.yaml"), skills, goals, matching
         )
         self.profiles = tuple(
-            {"id": profile.id, "name": profile.name}
-            for profile in profiles
-            if profile.enabled
+            {"id": profile.id, "name": profile.name} for profile in profiles if profile.enabled
         )
         self.queries = compile_search_queries(profiles, matching)
 
     def scan(self, profile_id: str) -> ScanReport:
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         selected = tuple(query for query in self.queries if query.profile_id == profile_id)
         if not selected:
             raise ValueError("search profile was not found or is disabled")
         if self.adapter is None:
-            result = SourceScanResult(
-                "hh", "blocked", 0, 0, 0, 0, 0, self.blocked_message
-            )
-            return ScanReport(profile_id, "blocked", started, datetime.now(timezone.utc), (result,))
+            result = SourceScanResult("hh", "blocked", 0, 0, 0, 0, 0, self.blocked_message)
+            return ScanReport(profile_id, "blocked", started, datetime.now(UTC), (result,))
 
         records = {}
         skipped = 0
@@ -113,12 +108,12 @@ class ScanService:
 
         created = updated = imported = 0
         for record in records.values():
-            result = self.importer.import_collected(record)
-            if result.stale:
+            upsert_result = self.importer.import_collected(record)
+            if upsert_result.stale:
                 skipped += 1
                 continue
             imported += 1
-            if result.created:
+            if upsert_result.created:
                 created += 1
             else:
                 updated += 1
@@ -135,8 +130,8 @@ class ScanService:
         source = SourceScanResult(
             "hh", status, len(records), imported, created, updated, skipped, message
         )
-        return ScanReport(profile_id, status, started, datetime.now(timezone.utc), (source,))
+        return ScanReport(profile_id, status, started, datetime.now(UTC), (source,))
 
 
 def _time(value: datetime) -> str:
-    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")

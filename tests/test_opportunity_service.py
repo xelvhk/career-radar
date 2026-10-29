@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from career_radar.opportunity_service import OpportunityImporter
@@ -18,8 +18,8 @@ class OpportunityImporterTests(unittest.TestCase):
                 "AI Backend Engineer\nRequirements:\n- Python and FastAPI\n",
                 source="manual",
                 source_url="https://example.com/vacancies/42",
-                retrieved_at=datetime(2026, 8, 24, 9, 0, tzinfo=timezone.utc),
-                matched_at=datetime(2026, 8, 24, 9, 1, tzinfo=timezone.utc),
+                retrieved_at=datetime(2026, 8, 24, 9, 0, tzinfo=UTC),
+                matched_at=datetime(2026, 8, 24, 9, 1, tzinfo=UTC),
             )
             saved = OpportunityStore(database).get(result.opportunity.vacancy.id)
 
@@ -45,7 +45,5 @@ class OpportunityImporterTests(unittest.TestCase):
                     "Role\nDescription",
                     retrieved_at=marker,
                 )
-        self.assertEqual(
-            str(raised.exception), "retrieved_at must be an RFC 3339 timestamp"
-        )
+        self.assertEqual(str(raised.exception), "retrieved_at must be an RFC 3339 timestamp")
         self.assertNotIn(marker, str(raised.exception))

@@ -56,12 +56,8 @@ _YEAR_WORDS = {
     "десять": 10,
     "десяти": 10,
 }
-_DIGIT_YEARS = re.compile(
-    r"(?<!\w)(\d{1,2})\s*\+?\s*(?:years?|лет|года|год)(?!\w)"
-)
-_WORD_YEARS = re.compile(
-    rf"(?<!\w)({'|'.join(_YEAR_WORDS)})\s+(?:лет|года|год)(?!\w)"
-)
+_DIGIT_YEARS = re.compile(r"(?<!\w)(\d{1,2})\s*\+?\s*(?:years?|лет|года|год)(?!\w)")
+_WORD_YEARS = re.compile(rf"(?<!\w)({'|'.join(_YEAR_WORDS)})\s+(?:лет|года|год)(?!\w)")
 
 
 def parse_vacancy(text: str, config: MatchingConfig) -> Vacancy:
@@ -120,8 +116,7 @@ def parse_vacancy(text: str, config: MatchingConfig) -> Vacancy:
         skill_ids = _extract_ids(normalized_line, config.compiled_skill_aliases)
         importance: RequirementImportance = (
             "preferred"
-            if section == "preferred"
-            or _contains_marker(normalized_line, config.preferred_markers)
+            if section == "preferred" or _contains_marker(normalized_line, config.preferred_markers)
             else "required"
         )
         for skill_id in skill_ids:
@@ -136,8 +131,7 @@ def parse_vacancy(text: str, config: MatchingConfig) -> Vacancy:
                 )
 
         looks_like_requirement = section is not None and (
-            is_bullet
-            or _contains_marker(normalized_line, config.requirement_line_markers)
+            is_bullet or _contains_marker(normalized_line, config.requirement_line_markers)
         )
         if (
             looks_like_requirement
@@ -151,18 +145,14 @@ def parse_vacancy(text: str, config: MatchingConfig) -> Vacancy:
         title=title,
         requirements=tuple(requirements.values()),
         unmapped_requirement_lines=tuple(dict.fromkeys(unmapped)),
-        target_roles=tuple(
-            _extract_ids(_normalize(title), config.compiled_role_aliases)
-        ),
+        target_roles=tuple(_extract_ids(_normalize(title), config.compiled_role_aliases)),
         domains=tuple(_extract_ids(normalized_text, config.compiled_domain_aliases)),
         seniority=_extract_first(normalized_text, config.compiled_seniority_aliases),
         is_remote=_work_mode(normalized_text, config),
         minimum_years_experience=minimum_years_experience,
         requires_production_experience=requires_production_experience,
         location_constraints=tuple(
-            _extract_ids(
-                normalized_text, config.compiled_location_constraint_aliases
-            )
+            _extract_ids(normalized_text, config.compiled_location_constraint_aliases)
         ),
     )
 
@@ -183,9 +173,7 @@ def _contains_marker(line: str, markers: tuple[str, ...]) -> bool:
     return any(_phrase_pattern(marker).search(line) for marker in markers)
 
 
-def _extract_ids(
-    text: str, aliases: tuple[tuple[str, re.Pattern[str]], ...]
-) -> list[str]:
+def _extract_ids(text: str, aliases: tuple[tuple[str, re.Pattern[str]], ...]) -> list[str]:
     found: list[tuple[int, int, str]] = []
     for item_id, pattern in aliases:
         match = pattern.search(text)
@@ -195,9 +183,7 @@ def _extract_ids(
     return list(dict.fromkeys(item_id for _, _, item_id in found))
 
 
-def _extract_first(
-    text: str, aliases: tuple[tuple[str, re.Pattern[str]], ...]
-) -> str | None:
+def _extract_first(text: str, aliases: tuple[tuple[str, re.Pattern[str]], ...]) -> str | None:
     values = _extract_ids(text, aliases)
     return values[0] if values else None
 
