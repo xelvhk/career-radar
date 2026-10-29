@@ -61,94 +61,152 @@ def validate_search_profiles(
     if not isinstance(profiles, list) or not profiles:
         return errors + ["search_profiles must be a non-empty list"]
 
+    skills, roles, aliases = _validation_dependencies(skills_data, goals_data, matching_data)
+    seen_ids: set[str] = set()
+    for index, profile in enumerate(profiles):
+        _validate_profile(profile, index, skills, roles, aliases, seen_ids, errors)
+    return errors
+
+
+def _validation_dependencies(
+    skills_data: dict[str, Any],
+    goals_data: dict[str, Any],
+    matching_data: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], set[str], dict[str, Any]]:
     skill_items = skills_data.get("skills")
     if not isinstance(skill_items, list):
         skill_items = []
-    skills = {
-        item.get("id"): item
-        for item in skill_items
-        if isinstance(item, dict) and isinstance(item.get("id"), str)
-    }
+    skills: dict[str, dict[str, Any]] = {}
+    for item in skill_items:
+        if isinstance(item, dict) and isinstance(item.get("id"), str):
+            skills[item["id"]] = item
     career_goals = goals_data.get("career_goals")
     if not isinstance(career_goals, dict):
         career_goals = {}
     target_roles = career_goals.get("target_roles")
     if not isinstance(target_roles, list):
         target_roles = []
-    roles = {
-        item.get("id")
-        for item in target_roles
-        if isinstance(item, dict) and isinstance(item.get("id"), str)
-    }
+    roles: set[str] = set()
+    for item in target_roles:
+        if isinstance(item, dict) and isinstance(item.get("id"), str):
+            roles.add(item["id"])
     aliases = matching_data.get("skill_aliases")
     if not isinstance(aliases, dict):
         aliases = {}
-    seen_ids: set[str] = set()
+    return skills, roles, aliases
 
-    for index, profile in enumerate(profiles):
-        path = f"search_profiles[{index}]"
-        if not isinstance(profile, dict):
-            errors.append(f"{path} must be a mapping")
-            continue
-        if set(profile) != PROFILE_FIELDS:
-            errors.append(f"{path} must define exactly the profile contract fields")
 
-        profile_id = profile.get("id")
-        if not isinstance(profile_id, str) or ID_PATTERN.fullmatch(profile_id) is None:
-            errors.append(f"{path}.id must be a lowercase kebab-case identifier")
-        elif profile_id in seen_ids:
-            errors.append(f"{path}.id is a duplicate profile id")
+def _validate_profile(
+    profile: Any,
+    index: int,
+    skills: dict[str, dict[str, Any]],
+    roles: set[str],
+    aliases: dict[str, Any],
+    seen_ids: set[str],
+    errors: list[str],
+) -> None:
+    path = f"search_profiles[{index}]"
+    if not isinstance(profile, dict):
+        errors.append(f"{path} must be a mapping")
+        return
+    if set(profile) != PROFILE_FIELDS:
+        errors.append(f"{path} must define exactly the profile contract fields")
+    _validate_profile_fields(profile, path, roles, seen_ids, errors)
+    _validate_variants(profile.get("variants"), path, skills, aliases, errors)
+
+
+def _validate_profile_fields(
+    profile: dict[str, Any],
+    path: str,
+    roles: set[str],
+    seen_ids: set[str],
+    errors: list[str],
+) -> None:
+    profile_id = profile.get("id")
+    if not isinstance(profile_id, str) or ID_PATTERN.fullmatch(profile_id) is None:
+        errors.append(f"{path}.id must be a lowercase kebab-case identifier")
+    elif profile_id in seen_ids:
+        errors.append(f"{path}.id is a duplicate profile id")
+    else:
+        seen_ids.add(profile_id)
+    if not _bounded_text(profile.get("name"), 100):
+        errors.append(f"{path}.name must be non-empty text up to 100 characters")
+    if profile.get("target_role_id") not in roles:
+        errors.append(f"{path}.target_role_id references an unknown target role")
+    if type(profile.get("enabled")) is not bool:
+        errors.append(f"{path}.enabled must be boolean")
+    if not _term_list(profile.get("exclude_terms"), maximum=20):
+        errors.append(f"{path}.exclude_terms must contain 1 to 20 unique non-empty terms")
+
+
+def _validate_variants(
+    variants: Any,
+    path: str,
+    skills: dict[str, dict[str, Any]],
+    aliases: dict[str, Any],
+    errors: list[str],
+) -> None:
+    if not isinstance(variants, list) or not variants:
+        errors.append(f"{path}.variants must be a non-empty list")
+        return
+    seen_variants: set[tuple[str, tuple[str, ...]]] = set()
+    for variant_index, variant in enumerate(variants):
+        _validate_variant(
+            variant,
+            f"{path}.variants[{variant_index}]",
+            skills,
+            aliases,
+            seen_variants,
+            errors,
+        )
+
+
+def _validate_variant(
+    variant: Any,
+    path: str,
+    skills: dict[str, dict[str, Any]],
+    aliases: dict[str, Any],
+    seen_variants: set[tuple[str, tuple[str, ...]]],
+    errors: list[str],
+) -> None:
+    if not isinstance(variant, dict):
+        errors.append(f"{path} must be a mapping")
+        return
+    if set(variant) != VARIANT_FIELDS:
+        errors.append(f"{path} must define title_phrase and skill_ids")
+    title_phrase = variant.get("title_phrase")
+    if not _bounded_text(title_phrase, 120):
+        errors.append(f"{path}.title_phrase must be non-empty text up to 120 characters")
+    skill_ids = variant.get("skill_ids")
+    if not _id_list(skill_ids, maximum=5):
+        errors.append(f"{path}.skill_ids must contain 1 to 5 unique skill IDs")
+        return
+    if isinstance(title_phrase, str):
+        signature = (title_phrase, tuple(skill_ids))
+        if signature in seen_variants:
+            errors.append(f"{path} is a duplicate query variant")
         else:
-            seen_ids.add(profile_id)
-        if not _bounded_text(profile.get("name"), 100):
-            errors.append(f"{path}.name must be non-empty text up to 100 characters")
-        if profile.get("target_role_id") not in roles:
-            errors.append(f"{path}.target_role_id references an unknown target role")
-        if type(profile.get("enabled")) is not bool:
-            errors.append(f"{path}.enabled must be boolean")
+            seen_variants.add(signature)
+    for skill_id in skill_ids:
+        _validate_variant_skill(path, skill_id, skills, aliases, errors)
 
-        exclusions = profile.get("exclude_terms")
-        if not _term_list(exclusions, maximum=20):
-            errors.append(f"{path}.exclude_terms must contain 1 to 20 unique non-empty terms")
 
-        variants = profile.get("variants")
-        if not isinstance(variants, list) or not variants:
-            errors.append(f"{path}.variants must be a non-empty list")
-            continue
-        seen_variants: set[tuple[str, tuple[str, ...]]] = set()
-        for variant_index, variant in enumerate(variants):
-            variant_path = f"{path}.variants[{variant_index}]"
-            if not isinstance(variant, dict):
-                errors.append(f"{variant_path} must be a mapping")
-                continue
-            if set(variant) != VARIANT_FIELDS:
-                errors.append(f"{variant_path} must define title_phrase and skill_ids")
-            if not _bounded_text(variant.get("title_phrase"), 120):
-                errors.append(
-                    f"{variant_path}.title_phrase must be non-empty text up to 120 characters"
-                )
-            skill_ids = variant.get("skill_ids")
-            if not _id_list(skill_ids, maximum=5):
-                errors.append(f"{variant_path}.skill_ids must contain 1 to 5 unique skill IDs")
-                continue
-            title_phrase = variant.get("title_phrase")
-            if isinstance(title_phrase, str):
-                signature = (title_phrase, tuple(skill_ids))
-                if signature in seen_variants:
-                    errors.append(f"{variant_path} is a duplicate query variant")
-                else:
-                    seen_variants.add(signature)
-            for skill_id in skill_ids:
-                skill = skills.get(skill_id)
-                if skill is None:
-                    errors.append(f"{variant_path}.skill_ids references unknown skill {skill_id}")
-                    continue
-                if skill.get("level") not in SEARCHABLE_LEVELS:
-                    errors.append(f"{variant_path}.skill_ids {skill_id} lacks verified evidence")
-                skill_aliases = aliases.get(skill_id)
-                if not isinstance(skill_aliases, list) or not skill_aliases:
-                    errors.append(f"{variant_path}.skill_ids {skill_id} has no search alias")
-    return errors
+def _validate_variant_skill(
+    path: str,
+    skill_id: str,
+    skills: dict[str, dict[str, Any]],
+    aliases: dict[str, Any],
+    errors: list[str],
+) -> None:
+    skill = skills.get(skill_id)
+    if skill is None:
+        errors.append(f"{path}.skill_ids references unknown skill {skill_id}")
+        return
+    if skill.get("level") not in SEARCHABLE_LEVELS:
+        errors.append(f"{path}.skill_ids {skill_id} lacks verified evidence")
+    skill_aliases = aliases.get(skill_id)
+    if not isinstance(skill_aliases, list) or not skill_aliases:
+        errors.append(f"{path}.skill_ids {skill_id} has no search alias")
 
 
 def parse_search_profiles(

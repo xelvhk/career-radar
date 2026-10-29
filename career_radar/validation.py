@@ -41,6 +41,20 @@ class ArtifactMetadata:
     disclosure: str
 
 
+@dataclass(slots=True)
+class _ProjectIndex:
+    ids: set[str]
+    artifacts: dict[str, dict[str, ArtifactMetadata]]
+    visibilities: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class _EvidenceSummary:
+    has_verified: bool
+    has_verified_public: bool
+    has_production_context: bool
+
+
 def load_yaml(path: Path) -> dict[str, Any]:
     """Load a YAML mapping without accepting arbitrary Python objects."""
     try:
@@ -65,131 +79,180 @@ def validate_dataset(
     _schema_version(skills_data, "skills", issues)
     _schema_version(goals_data, "career_goals", issues)
 
-    project_ids: set[str] = set()
-    project_artifacts: dict[str, dict[str, ArtifactMetadata]] = {}
-    project_visibilities: dict[str, str] = {}
-
-    for index, project in enumerate(projects):
-        path = f"projects[{index}]"
-        if not isinstance(project, dict):
-            issues.append(ValidationIssue(path, "must be a mapping"))
-            continue
-        project_id = _identifier(project, path, project_ids, issues)
-        _required_text(project, "name", path, issues)
-        _required_text(project, "summary", path, issues)
-        _https_url(project, "repository_url", path, issues)
-        visibility = _enum(project, "repository_visibility", REPOSITORY_VISIBILITIES, path, issues)
-        access = _enum(project, "evidence_access", DISCLOSURE_STATES, path, issues)
-        _commit(project, "source_commit", path, issues)
-        _date(project, "verified_at", path, issues)
-
-        if visibility == "private" and access == "public":
-            issues.append(
-                ValidationIssue(
-                    f"{path}.evidence_access",
-                    "a private repository cannot have public evidence access",
-                )
-            )
-
-        artifacts_by_path = _validate_artifacts(
-            project.get("artifacts"), path, visibility, access, issues
-        )
-        if project_id:
-            project_artifacts[project_id] = artifacts_by_path
-            project_visibilities[project_id] = visibility
-
-    skill_ids: set[str] = set()
-    for index, skill in enumerate(skills):
-        path = f"skills[{index}]"
-        if not isinstance(skill, dict):
-            issues.append(ValidationIssue(path, "must be a mapping"))
-            continue
-        _identifier(skill, path, skill_ids, issues)
-        _required_text(skill, "name", path, issues)
-        _enum(skill, "category", SKILL_CATEGORIES, path, issues)
-        level = _enum(skill, "level", SKILL_LEVELS, path, issues)
-        evidence = skill.get("evidence")
-        if not isinstance(evidence, list):
-            issues.append(ValidationIssue(f"{path}.evidence", "must be a list"))
-            evidence = []
-
-        has_verified = False
-        has_verified_public = False
-        has_production_context = False
-        for evidence_index, item in enumerate(evidence):
-            evidence_path = f"{path}.evidence[{evidence_index}]"
-            if not isinstance(item, dict):
-                issues.append(ValidationIssue(evidence_path, "must be a mapping"))
-                continue
-            project_id = item.get("project_id")
-            if project_id not in project_ids:
-                issues.append(
-                    ValidationIssue(f"{evidence_path}.project_id", "references an unknown project")
-                )
-            project_key = project_id if isinstance(project_id, str) else ""
-            context = _enum(item, "experience_context", EXPERIENCE_CONTEXTS, evidence_path, issues)
-            if context == "production":
-                _required_text(item, "production_note", evidence_path, issues)
-
-            artifact_refs = item.get("artifacts")
-            if not isinstance(artifact_refs, list) or not all(
-                isinstance(value, str) and value for value in artifact_refs
-            ):
-                issues.append(
-                    ValidationIssue(
-                        f"{evidence_path}.artifacts",
-                        "must be a list of non-empty paths",
-                    )
-                )
-                artifact_refs = []
-
-            known_artifacts = project_artifacts.get(project_key, {})
-            referenced_metadata: list[ArtifactMetadata] = []
-            for artifact_index, artifact_ref in enumerate(artifact_refs):
-                metadata = known_artifacts.get(artifact_ref)
-                if metadata is None:
-                    issues.append(
-                        ValidationIssue(
-                            f"{evidence_path}.artifacts[{artifact_index}]",
-                            "references an unknown project artifact",
-                        )
-                    )
-                else:
-                    referenced_metadata.append(metadata)
-
-            verified = any(metadata.verification == "verified" for metadata in referenced_metadata)
-            verified_public = (
-                any(
-                    metadata.verification == "verified" and metadata.disclosure == "public"
-                    for metadata in referenced_metadata
-                )
-                and project_visibilities.get(project_key) == "public"
-            )
-            has_verified |= verified
-            has_verified_public |= verified_public
-            has_production_context |= context == "production" and verified
-
-        if level in {"practical", "public_evidence", "production"} and not has_verified:
-            issues.append(
-                ValidationIssue(f"{path}.level", f"{level} requires at least one verified artifact")
-            )
-        if level == "public_evidence" and not has_verified_public:
-            issues.append(
-                ValidationIssue(
-                    f"{path}.level",
-                    "public_evidence requires a verified public artifact in a public repository",
-                )
-            )
-        if level == "production" and not has_production_context:
-            issues.append(
-                ValidationIssue(
-                    f"{path}.level",
-                    "production requires verified evidence with explicit production context",
-                )
-            )
-
+    project_index = _validate_projects(projects, issues)
+    _validate_skills(skills, project_index, issues)
     _validate_goals(goals_data.get("career_goals"), issues)
     return issues
+
+
+def _validate_projects(projects: list[Any], issues: list[ValidationIssue]) -> _ProjectIndex:
+    project_index = _ProjectIndex(set(), {}, {})
+    for position, project in enumerate(projects):
+        _validate_project(project, position, project_index, issues)
+    return project_index
+
+
+def _validate_project(
+    project: Any,
+    position: int,
+    project_index: _ProjectIndex,
+    issues: list[ValidationIssue],
+) -> None:
+    path = f"projects[{position}]"
+    if not isinstance(project, dict):
+        issues.append(ValidationIssue(path, "must be a mapping"))
+        return
+    project_id = _identifier(project, path, project_index.ids, issues)
+    _required_text(project, "name", path, issues)
+    _required_text(project, "summary", path, issues)
+    _https_url(project, "repository_url", path, issues)
+    visibility = _enum(project, "repository_visibility", REPOSITORY_VISIBILITIES, path, issues)
+    access = _enum(project, "evidence_access", DISCLOSURE_STATES, path, issues)
+    _commit(project, "source_commit", path, issues)
+    _date(project, "verified_at", path, issues)
+    if visibility == "private" and access == "public":
+        issues.append(
+            ValidationIssue(
+                f"{path}.evidence_access",
+                "a private repository cannot have public evidence access",
+            )
+        )
+    artifacts = _validate_artifacts(project.get("artifacts"), path, visibility, access, issues)
+    if project_id:
+        project_index.artifacts[project_id] = artifacts
+        project_index.visibilities[project_id] = visibility
+
+
+def _validate_skills(
+    skills: list[Any], project_index: _ProjectIndex, issues: list[ValidationIssue]
+) -> None:
+    skill_ids: set[str] = set()
+    for index, skill in enumerate(skills):
+        _validate_skill(skill, index, skill_ids, project_index, issues)
+
+
+def _validate_skill(
+    skill: Any,
+    index: int,
+    skill_ids: set[str],
+    project_index: _ProjectIndex,
+    issues: list[ValidationIssue],
+) -> None:
+    path = f"skills[{index}]"
+    if not isinstance(skill, dict):
+        issues.append(ValidationIssue(path, "must be a mapping"))
+        return
+    _identifier(skill, path, skill_ids, issues)
+    _required_text(skill, "name", path, issues)
+    _enum(skill, "category", SKILL_CATEGORIES, path, issues)
+    level = _enum(skill, "level", SKILL_LEVELS, path, issues)
+    evidence = skill.get("evidence")
+    if not isinstance(evidence, list):
+        issues.append(ValidationIssue(f"{path}.evidence", "must be a list"))
+        evidence = []
+    summary = _validate_evidence(evidence, path, project_index, issues)
+    _validate_skill_level(level, path, summary, issues)
+
+
+def _validate_evidence(
+    evidence: list[Any],
+    skill_path: str,
+    project_index: _ProjectIndex,
+    issues: list[ValidationIssue],
+) -> _EvidenceSummary:
+    summaries = [
+        _validate_evidence_item(item, f"{skill_path}.evidence[{item_index}]", project_index, issues)
+        for item_index, item in enumerate(evidence)
+    ]
+    return _EvidenceSummary(
+        any(summary.has_verified for summary in summaries),
+        any(summary.has_verified_public for summary in summaries),
+        any(summary.has_production_context for summary in summaries),
+    )
+
+
+def _validate_evidence_item(
+    item: Any,
+    path: str,
+    project_index: _ProjectIndex,
+    issues: list[ValidationIssue],
+) -> _EvidenceSummary:
+    if not isinstance(item, dict):
+        issues.append(ValidationIssue(path, "must be a mapping"))
+        return _EvidenceSummary(False, False, False)
+    project_id = item.get("project_id")
+    if project_id not in project_index.ids:
+        issues.append(ValidationIssue(f"{path}.project_id", "references an unknown project"))
+    project_key = project_id if isinstance(project_id, str) else ""
+    context = _enum(item, "experience_context", EXPERIENCE_CONTEXTS, path, issues)
+    if context == "production":
+        _required_text(item, "production_note", path, issues)
+    referenced_metadata = _referenced_artifacts(
+        item.get("artifacts"), path, project_index.artifacts.get(project_key, {}), issues
+    )
+    verified = any(metadata.verification == "verified" for metadata in referenced_metadata)
+    verified_public = (
+        any(
+            metadata.verification == "verified" and metadata.disclosure == "public"
+            for metadata in referenced_metadata
+        )
+        and project_index.visibilities.get(project_key) == "public"
+    )
+    return _EvidenceSummary(verified, verified_public, context == "production" and verified)
+
+
+def _referenced_artifacts(
+    artifact_refs: Any,
+    evidence_path: str,
+    known_artifacts: dict[str, ArtifactMetadata],
+    issues: list[ValidationIssue],
+) -> list[ArtifactMetadata]:
+    if not isinstance(artifact_refs, list) or not all(
+        isinstance(value, str) and value for value in artifact_refs
+    ):
+        issues.append(
+            ValidationIssue(f"{evidence_path}.artifacts", "must be a list of non-empty paths")
+        )
+        return []
+    referenced_metadata: list[ArtifactMetadata] = []
+    for artifact_index, artifact_ref in enumerate(artifact_refs):
+        metadata = known_artifacts.get(artifact_ref)
+        if metadata is None:
+            issues.append(
+                ValidationIssue(
+                    f"{evidence_path}.artifacts[{artifact_index}]",
+                    "references an unknown project artifact",
+                )
+            )
+        else:
+            referenced_metadata.append(metadata)
+    return referenced_metadata
+
+
+def _validate_skill_level(
+    level: Any,
+    path: str,
+    summary: _EvidenceSummary,
+    issues: list[ValidationIssue],
+) -> None:
+    if level in {"practical", "public_evidence", "production"} and not summary.has_verified:
+        issues.append(
+            ValidationIssue(f"{path}.level", f"{level} requires at least one verified artifact")
+        )
+    if level == "public_evidence" and not summary.has_verified_public:
+        issues.append(
+            ValidationIssue(
+                f"{path}.level",
+                "public_evidence requires a verified public artifact in a public repository",
+            )
+        )
+    if level == "production" and not summary.has_production_context:
+        issues.append(
+            ValidationIssue(
+                f"{path}.level",
+                "production requires verified evidence with explicit production context",
+            )
+        )
 
 
 def _validate_artifacts(

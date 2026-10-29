@@ -80,15 +80,32 @@ def validate_matching_config(
     if data.get("schema_version") != 2:
         errors.append("schema_version must equal 2")
 
-    skill_ids = _ids(skills_data.get("skills"))
-    goals = goals_data.get("career_goals", {})
-    role_ids = _ids(goals.get("target_roles") if isinstance(goals, dict) else None)
-    domain_ids = set(goals.get("preferred_domains", [])) if isinstance(goals, dict) else set()
-    for key, known_ids in (
-        ("skill_aliases", skill_ids),
-        ("role_aliases", role_ids),
-        ("domain_aliases", domain_ids),
-    ):
+    _validate_known_alias_maps(data, skills_data, goals_data, errors)
+    _validate_alias_map(data, "seniority_aliases", errors)
+    _validate_alias_map(data, "location_constraint_aliases", errors)
+    _validate_marker_lists(data, errors)
+    _validate_weights(data.get("weights"), errors)
+    _validate_thresholds(data.get("thresholds"), errors)
+    _validate_shared_aliases(data, errors)
+    return errors
+
+
+def _validate_known_alias_maps(
+    data: dict[str, Any],
+    skills_data: dict[str, Any],
+    goals_data: dict[str, Any],
+    errors: list[str],
+) -> None:
+    goals = goals_data.get("career_goals")
+    known_alias_ids = (
+        ("skill_aliases", _ids(skills_data.get("skills"))),
+        ("role_aliases", _ids(goals.get("target_roles") if isinstance(goals, dict) else None)),
+        (
+            "domain_aliases",
+            set(goals.get("preferred_domains", [])) if isinstance(goals, dict) else set(),
+        ),
+    )
+    for key, known_ids in known_alias_ids:
         aliases = data.get(key)
         if not isinstance(aliases, dict) or not aliases:
             errors.append(f"{key} must be a non-empty mapping")
@@ -98,18 +115,16 @@ def validate_matching_config(
             errors.append(f"{key} references unknown IDs: {', '.join(sorted(unknown))}")
         _validate_alias_values(key, aliases, errors)
 
-    seniority = data.get("seniority_aliases")
-    if not isinstance(seniority, dict) or not seniority:
-        errors.append("seniority_aliases must be a non-empty mapping")
-    else:
-        _validate_alias_values("seniority_aliases", seniority, errors)
 
-    location_constraints = data.get("location_constraint_aliases")
-    if not isinstance(location_constraints, dict) or not location_constraints:
-        errors.append("location_constraint_aliases must be a non-empty mapping")
+def _validate_alias_map(data: dict[str, Any], key: str, errors: list[str]) -> None:
+    aliases = data.get(key)
+    if not isinstance(aliases, dict) or not aliases:
+        errors.append(f"{key} must be a non-empty mapping")
     else:
-        _validate_alias_values("location_constraint_aliases", location_constraints, errors)
+        _validate_alias_values(key, aliases, errors)
 
+
+def _validate_marker_lists(data: dict[str, Any], errors: list[str]) -> None:
     for key in (
         "preferred_markers",
         "negation_markers",
@@ -124,7 +139,8 @@ def validate_matching_config(
         if not _string_list(data.get(key)):
             errors.append(f"{key} must be a non-empty list of strings")
 
-    weights = data.get("weights")
+
+def _validate_weights(weights: Any, errors: list[str]) -> None:
     if not isinstance(weights, dict) or set(weights) != set(DIMENSION_NAMES):
         errors.append("weights must define exactly the seven match dimensions")
     elif not all(isinstance(value, int) and value > 0 for value in weights.values()):
@@ -132,7 +148,8 @@ def validate_matching_config(
     elif sum(weights.values()) != 100:
         errors.append("weights must total 100")
 
-    thresholds = data.get("thresholds")
+
+def _validate_thresholds(thresholds: Any, errors: list[str]) -> None:
     required_thresholds = {"apply_score", "skip_score", "minimum_confidence"}
     if not isinstance(thresholds, dict) or set(thresholds) != required_thresholds:
         errors.append("thresholds must define apply_score, skip_score, minimum_confidence")
@@ -141,6 +158,8 @@ def validate_matching_config(
     elif thresholds["skip_score"] >= thresholds["apply_score"]:
         errors.append("skip_score must be lower than apply_score")
 
+
+def _validate_shared_aliases(data: dict[str, Any], errors: list[str]) -> None:
     duplicate_aliases: dict[str, str] = {}
     for map_name in ("skill_aliases", "role_aliases", "domain_aliases"):
         aliases = data.get(map_name, {})
@@ -157,7 +176,6 @@ def validate_matching_config(
                 if owner and owner != item_id:
                     errors.append(f"alias {alias!r} is shared by {owner} and {item_id}")
                 duplicate_aliases[normalized] = item_id
-    return errors
 
 
 def _compile_alias_map(data: dict[str, list[str]]) -> tuple[tuple[str, re.Pattern[str]], ...]:

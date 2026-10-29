@@ -116,10 +116,9 @@ Install the development checks and run the same gates as CI:
 .venv/bin/coverage report
 ```
 
-The initial complexity ceiling is 40 so the gate records the current baseline.
-The next behavior-preserving refactor lowers it to 20; the long-term target is
-10. Mutation testing is intentionally explicit because it is slower than the
-per-push checks:
+The enforced complexity ceiling is 20. The long-term target is 10; remaining
+reductions should be small behavior-preserving refactors. Mutation testing is
+intentionally explicit because it is slower than the per-push checks:
 
 ```bash
 .venv/bin/python -m pip install -e '.[test,quality,mutation]'
