@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, NoReturn, Protocol
 
 import yaml
 
@@ -50,6 +50,14 @@ class VacancyUnavailableError(SourceRequestError):
     """A vacancy disappeared between search and detail retrieval."""
 
 
+HTTP_ERROR_MESSAGES: dict[int, tuple[type[SourceRequestError], str]] = {
+    400: (SourceRequestError, "HeadHunter rejected the search request"),
+    401: (SourceRequestError, "HeadHunter rejected the application authorization"),
+    403: (SourceRequestError, "HeadHunter rejected the application authorization"),
+    404: (VacancyUnavailableError, "HeadHunter vacancy is no longer available"),
+}
+
+
 class JsonTransport(Protocol):
     def get_json(self, path: str, parameters: dict[str, str], user_agent: str) -> Any:
         """Fetch one JSON document from the fixed HeadHunter API origin."""
@@ -62,54 +70,63 @@ class HeadHunterTransport:
         self._opener = urllib.request.build_opener(_NoRedirectHandler())
 
     def get_json(self, path: str, parameters: dict[str, str], user_agent: str) -> Any:
-        if not path.startswith("/") or path.startswith("//"):
-            raise SourceRequestError(SAFE_MESSAGE)
-        query = urllib.parse.urlencode(parameters)
-        request = urllib.request.Request(
-            f"{API_ORIGIN}{path}?{query}" if query else f"{API_ORIGIN}{path}",
-            headers={"HH-User-Agent": user_agent, "Accept": "application/json"},
-        )
+        request = _build_request(path, parameters, user_agent)
         try:
             with self._opener.open(request, timeout=10) as response:
-                final = urllib.parse.urlsplit(response.geturl())
-                if final.scheme != "https" or final.hostname != "api.hh.ru":
-                    raise SourceRequestError("HeadHunter returned an unsafe redirect")
+                _validate_response_origin(response.geturl())
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
         except urllib.error.HTTPError as error:
-            if 300 <= error.code < 400:
-                raise SourceRequestError("HeadHunter returned an unsafe redirect") from error
-            if error.code == 429:
-                retry_after = error.headers.get("Retry-After") if error.headers else None
-                if (
-                    isinstance(retry_after, str)
-                    and retry_after.isdigit()
-                    and int(retry_after) <= 86_400
-                ):
-                    message = (
-                        f"HeadHunter rate limit reached; try again in {int(retry_after)} seconds"
-                    )
-                else:
-                    message = "HeadHunter rate limit reached; try again later"
-                raise SourceRequestError(message) from error
-            if error.code in {401, 403}:
-                raise SourceRequestError(
-                    "HeadHunter rejected the application authorization"
-                ) from error
-            if error.code == 404:
-                raise VacancyUnavailableError(
-                    "HeadHunter vacancy is no longer available"
-                ) from error
-            if error.code == 400:
-                raise SourceRequestError("HeadHunter rejected the search request") from error
-            raise SourceRequestError(SAFE_MESSAGE) from error
+            _raise_http_error(error)
         except (OSError, TimeoutError, urllib.error.URLError) as error:
             raise SourceRequestError(SAFE_MESSAGE) from error
-        if len(raw) > MAX_RESPONSE_BYTES:
-            raise SourceRequestError("HeadHunter response is too large")
-        try:
-            return json.loads(raw.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise SourceRequestError("HeadHunter returned an invalid response") from error
+        return _decode_response(raw)
+
+
+def _build_request(
+    path: str, parameters: dict[str, str], user_agent: str
+) -> urllib.request.Request:
+    if not path.startswith("/") or path.startswith("//"):
+        raise SourceRequestError(SAFE_MESSAGE)
+    query = urllib.parse.urlencode(parameters)
+    url = f"{API_ORIGIN}{path}?{query}" if query else f"{API_ORIGIN}{path}"
+    return urllib.request.Request(
+        url,
+        headers={"HH-User-Agent": user_agent, "Accept": "application/json"},
+    )
+
+
+def _validate_response_origin(url: str) -> None:
+    final = urllib.parse.urlsplit(url)
+    if final.scheme != "https" or final.hostname != "api.hh.ru":
+        raise SourceRequestError("HeadHunter returned an unsafe redirect")
+
+
+def _raise_http_error(error: urllib.error.HTTPError) -> NoReturn:
+    if 300 <= error.code < 400:
+        raise SourceRequestError("HeadHunter returned an unsafe redirect") from error
+    if error.code == 429:
+        raise SourceRequestError(_rate_limit_message(error)) from error
+    error_type, message = HTTP_ERROR_MESSAGES.get(
+        error.code,
+        (SourceRequestError, SAFE_MESSAGE),
+    )
+    raise error_type(message) from error
+
+
+def _rate_limit_message(error: urllib.error.HTTPError) -> str:
+    retry_after = error.headers.get("Retry-After") if error.headers else None
+    if isinstance(retry_after, str) and retry_after.isdigit() and int(retry_after) <= 86_400:
+        return f"HeadHunter rate limit reached; try again in {int(retry_after)} seconds"
+    return "HeadHunter rate limit reached; try again later"
+
+
+def _decode_response(raw: bytes) -> Any:
+    if len(raw) > MAX_RESPONSE_BYTES:
+        raise SourceRequestError("HeadHunter response is too large")
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SourceRequestError("HeadHunter returned an invalid response") from error
 
 
 class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):

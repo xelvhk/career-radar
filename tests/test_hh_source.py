@@ -7,6 +7,7 @@ from email.message import Message
 from pathlib import Path
 
 from career_radar.hh_source import (
+    MAX_RESPONSE_BYTES,
     HeadHunterAdapter,
     HeadHunterConfig,
     HeadHunterTransport,
@@ -56,6 +57,27 @@ class ErrorOpener:
         raise urllib.error.HTTPError(
             request.full_url, self.status, "external marker", self.headers, None
         )
+
+
+class ResponseOpener:
+    def __init__(self, body, url="https://api.hh.ru/vacancies"):
+        self.body = body
+        self.url = url
+
+    def open(self, request, timeout):
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return None
+
+    def geturl(self):
+        return self.url
+
+    def read(self, limit):
+        return self.body
 
 
 class HeadHunterSourceTests(unittest.TestCase):
@@ -168,6 +190,43 @@ class HeadHunterSourceTests(unittest.TestCase):
 
         self.assertNotIn("external marker", str(raised.exception))
         raised.exception.__cause__.close()
+
+    def test_transport_maps_http_statuses_to_stable_domain_errors(self) -> None:
+        cases = (
+            (302, SourceRequestError, "unsafe redirect"),
+            (400, SourceRequestError, "rejected the search request"),
+            (401, SourceRequestError, "rejected the application authorization"),
+            (403, SourceRequestError, "rejected the application authorization"),
+            (404, VacancyUnavailableError, "no longer available"),
+            (500, SourceRequestError, "could not complete"),
+        )
+        for status, error_type, message in cases:
+            with self.subTest(status=status):
+                transport = HeadHunterTransport()
+                transport._opener = ErrorOpener(status)
+                with self.assertRaisesRegex(error_type, message) as raised:
+                    transport.get_json("/vacancies", {}, "CareerRadar/0.1")
+                raised.exception.__cause__.close()
+
+    def test_transport_validates_path_origin_size_and_json(self) -> None:
+        transport = HeadHunterTransport()
+        with self.assertRaisesRegex(SourceRequestError, "could not complete"):
+            transport.get_json("//evil.example", {}, "CareerRadar/0.1")
+
+        transport._opener = ResponseOpener(b'{"ok": true}')
+        self.assertEqual(transport.get_json("/vacancies", {}, "CareerRadar/0.1"), {"ok": True})
+
+        transport._opener = ResponseOpener(b"{}", "https://evil.example/vacancies")
+        with self.assertRaisesRegex(SourceRequestError, "unsafe redirect"):
+            transport.get_json("/vacancies", {}, "CareerRadar/0.1")
+
+        transport._opener = ResponseOpener(b"x" * (MAX_RESPONSE_BYTES + 1))
+        with self.assertRaisesRegex(SourceRequestError, "too large"):
+            transport.get_json("/vacancies", {}, "CareerRadar/0.1")
+
+        transport._opener = ResponseOpener(b"not-json")
+        with self.assertRaisesRegex(SourceRequestError, "invalid response"):
+            transport.get_json("/vacancies", {}, "CareerRadar/0.1")
 
 
 if __name__ == "__main__":
