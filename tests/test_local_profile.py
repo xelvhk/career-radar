@@ -107,6 +107,40 @@ class LocalProfileTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "commercial_years"):
                 load_local_profile(path)
 
+    def test_validation_reports_structure_and_value_errors_in_stable_order(self) -> None:
+        from career_radar.local_profile import validate_local_profile
+
+        self.assertEqual(validate_local_profile([]), ["root must be a mapping"])
+        self.assertEqual(
+            validate_local_profile({"schema_version": 2, "profile": []}),
+            ["schema_version must equal 1", "profile must be a mapping"],
+        )
+
+        errors = validate_local_profile(
+            {
+                "schema_version": 1,
+                "profile": {
+                    "commercial_years": True,
+                    "confirmed_production_experience": "yes",
+                    "current_country_code": "usa",
+                    "target_seniority": ["senior", "senior"],
+                    "private_note": "must not be exposed",
+                },
+            }
+        )
+
+        self.assertEqual(
+            errors,
+            [
+                "profile contains unsupported fields",
+                "profile.commercial_years must be an integer from 0 to 60 or null",
+                "profile.confirmed_production_experience must be true, false, or null",
+                "profile.current_country_code must be an ISO alpha-2 code or null",
+                "profile.target_seniority must not contain duplicates",
+            ],
+        )
+        self.assertNotIn("private_note", "; ".join(errors))
+
     def test_rejects_non_utf8_and_oversized_files_without_echoing_content(self) -> None:
         from career_radar.local_profile import load_local_profile
 

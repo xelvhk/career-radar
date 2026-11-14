@@ -73,13 +73,24 @@ def validate_local_profile(data: Any) -> list[str]:
     profile = data.get("profile")
     if not isinstance(profile, dict):
         return errors + ["profile must be a mapping"]
+    errors.extend(_validate_profile_fields(profile))
+    errors.extend(_validate_profile_values(profile))
+    return errors
+
+
+def _validate_profile_fields(profile: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
     unknown_fields = set(profile) - PROFILE_FIELDS
     missing_fields = PROFILE_FIELDS - set(profile)
     if unknown_fields:
         errors.append("profile contains unsupported fields")
     if missing_fields:
         errors.append("profile is missing required fields")
+    return errors
 
+
+def _validate_profile_values(profile: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
     years = profile.get("commercial_years")
     if years is not None and (type(years) is not int or not 0 <= years <= 60):
         errors.append("profile.commercial_years must be an integer from 0 to 60 or null")
