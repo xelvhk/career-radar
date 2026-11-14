@@ -11,16 +11,21 @@ from career_radar.scan_service import ScanService
 from tests.test_repository_data import ROOT
 
 
-def vacancy(identifier: str = "101"):
+def vacancy(
+    identifier: str = "101",
+    *,
+    retrieved_at: datetime = datetime(2026, 8, 28, 9, 0, tzinfo=UTC),
+    description: str = "Python, FastAPI and PostgreSQL",
+):
     return normalize_collected_vacancy(
         CollectedVacancyInput(
             source="hh",
             source_vacancy_id=identifier,
             source_url=f"https://hh.ru/vacancy/{identifier}",
-            retrieved_at=datetime(2026, 8, 28, 9, 0, tzinfo=UTC),
+            retrieved_at=retrieved_at,
             collection_method="api",
             title="Python Backend Engineer",
-            description="Python, FastAPI and PostgreSQL",
+            description=description,
         )
     )
 
@@ -115,6 +120,48 @@ class ScanServiceTests(unittest.TestCase):
         self.assertEqual(report.status, "partial")
         self.assertEqual(len(saved), 1)
         self.assertIn("rate limit", report.sources[0].message)
+
+    def test_all_failed_variants_return_failed_without_importing(self) -> None:
+        adapter = FakeAdapter(
+            [
+                SourceRequestError("HeadHunter request one failed"),
+                SourceRequestError("HeadHunter request two failed"),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "inbox.sqlite3"
+            service = ScanService(ROOT, OpportunityImporter(ROOT, database), adapter)
+
+            report = service.scan("python-fastapi")
+
+            self.assertEqual(report.status, "failed")
+            self.assertIn("request two failed", report.sources[0].message)
+            self.assertEqual(OpportunityStore(database).list(), ())
+
+    def test_newer_observation_is_reported_as_updated(self) -> None:
+        original = vacancy()
+        updated = vacancy(
+            retrieved_at=datetime(2026, 8, 29, 9, 0, tzinfo=UTC),
+            description="Python, FastAPI, PostgreSQL and Docker",
+        )
+        adapter = FakeAdapter(
+            [
+                CollectionBatch((original,), 0),
+                CollectionBatch((), 0),
+                CollectionBatch((updated,), 0),
+                CollectionBatch((), 0),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "inbox.sqlite3"
+            service = ScanService(ROOT, OpportunityImporter(ROOT, database), adapter)
+
+            service.scan("python-fastapi")
+            report = service.scan("python-fastapi")
+
+        self.assertEqual(report.sources[0].imported_count, 1)
+        self.assertEqual(report.sources[0].created_count, 0)
+        self.assertEqual(report.sources[0].updated_count, 1)
 
     def test_unknown_profile_is_rejected_without_source_call(self) -> None:
         adapter = FakeAdapter([])
