@@ -103,6 +103,36 @@ class SourceAuditTests(unittest.TestCase):
 
         self.assertTrue(any("origin does not match" in issue.message for issue in issues))
 
+    def test_rejects_missing_non_directory_and_non_git_paths(self) -> None:
+        missing = Path(self.temporary_directory.name) / "missing"
+        regular_file = Path(self.temporary_directory.name) / "file.txt"
+        regular_file.write_text("not a repository", encoding="utf-8")
+        plain_directory = Path(self.temporary_directory.name) / "plain"
+        plain_directory.mkdir()
+
+        cases = (
+            (missing, "does not exist"),
+            (regular_file, "not a directory"),
+            (plain_directory, "not a Git repository"),
+        )
+        for path, message in cases:
+            with self.subTest(path=path.name):
+                issues = audit_sources(self.projects, {"example-project": path})
+                self.assertTrue(any(message in issue.message for issue in issues))
+
+    def test_requires_repository_root_and_origin_remote(self) -> None:
+        nested = self.repository / "nested"
+        nested.mkdir()
+
+        nested_issues = audit_sources(self.projects, {"example-project": nested})
+
+        self.assertTrue(any("repository root" in issue.message for issue in nested_issues))
+
+        git(self.repository, "remote", "remove", "origin")
+        origin_issues = audit_sources(self.projects, {"example-project": self.repository})
+
+        self.assertTrue(any("origin remote is missing" in issue.message for issue in origin_issues))
+
     def test_requires_a_path_mapping_for_each_project(self) -> None:
         issues = audit_sources(self.projects, {})
 

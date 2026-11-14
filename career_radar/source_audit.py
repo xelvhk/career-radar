@@ -72,74 +72,120 @@ def audit_sources(
 
 def _audit_project(project: dict[str, Any], repository: Path) -> list[SourceAuditIssue]:
     project_id = str(project.get("id"))
-    issues: list[SourceAuditIssue] = []
+    resolved_repository, issues = _inspect_repository(project_id, repository)
+    if resolved_repository is None:
+        return issues
+
+    issues.extend(_audit_origin(project_id, resolved_repository, project.get("repository_url")))
+    pinned_commit = project.get("source_commit")
+    head_available, head_issues = _audit_head(project_id, resolved_repository, pinned_commit)
+    issues.extend(head_issues)
+    if head_available:
+        issues.extend(
+            _audit_artifacts(
+                project_id,
+                resolved_repository,
+                pinned_commit,
+                project.get("artifacts"),
+            )
+        )
+    return issues
+
+
+def _inspect_repository(
+    project_id: str, repository: Path
+) -> tuple[Path | None, list[SourceAuditIssue]]:
     try:
         repository = repository.resolve(strict=True)
     except OSError:
-        return [SourceAuditIssue(project_id, None, "repository path does not exist")]
+        return None, [SourceAuditIssue(project_id, None, "repository path does not exist")]
     if not repository.is_dir():
-        return [SourceAuditIssue(project_id, None, "repository path is not a directory")]
+        return None, [SourceAuditIssue(project_id, None, "repository path is not a directory")]
 
     root = _git(repository, "rev-parse", "--show-toplevel")
     if not root.ok:
-        return [SourceAuditIssue(project_id, None, "path is not a Git repository")]
+        return None, [SourceAuditIssue(project_id, None, "path is not a Git repository")]
     if Path(root.stdout).resolve() != repository:
-        issues.append(
+        return repository, [
             SourceAuditIssue(project_id, None, "path must point to the Git repository root")
-        )
+        ]
+    return repository, []
 
+
+def _audit_origin(
+    project_id: str, repository: Path, expected_origin: Any
+) -> list[SourceAuditIssue]:
     origin = _git(repository, "remote", "get-url", "origin")
-    expected_origin = project.get("repository_url")
     if not origin.ok:
-        issues.append(SourceAuditIssue(project_id, None, "origin remote is missing"))
-    elif _normalize_repository_url(origin.stdout) != _normalize_repository_url(expected_origin):
-        issues.append(SourceAuditIssue(project_id, None, "origin does not match repository_url"))
+        return [SourceAuditIssue(project_id, None, "origin remote is missing")]
+    if _normalize_repository_url(origin.stdout) != _normalize_repository_url(expected_origin):
+        return [SourceAuditIssue(project_id, None, "origin does not match repository_url")]
+    return []
 
+
+def _audit_head(
+    project_id: str, repository: Path, pinned_commit: Any
+) -> tuple[bool, list[SourceAuditIssue]]:
     head = _git(repository, "rev-parse", "HEAD")
-    pinned_commit = project.get("source_commit")
     if not head.ok:
-        issues.append(SourceAuditIssue(project_id, None, "cannot resolve repository HEAD"))
-        return issues
+        return False, [SourceAuditIssue(project_id, None, "cannot resolve repository HEAD")]
     if head.stdout != pinned_commit:
-        issues.append(SourceAuditIssue(project_id, None, "HEAD does not match source_commit"))
+        return True, [SourceAuditIssue(project_id, None, "HEAD does not match source_commit")]
+    return True, []
 
-    artifacts = project.get("artifacts")
+
+def _audit_artifacts(
+    project_id: str,
+    repository: Path,
+    pinned_commit: Any,
+    artifacts: Any,
+) -> list[SourceAuditIssue]:
+    issues: list[SourceAuditIssue] = []
+    for artifact_path in _verified_artifact_paths(artifacts):
+        issue = _audit_artifact(project_id, repository, pinned_commit, artifact_path)
+        if issue is not None:
+            issues.append(issue)
+    return issues
+
+
+def _verified_artifact_paths(artifacts: Any) -> Iterable[str]:
     if not isinstance(artifacts, list):
-        return issues
+        return
     for artifact in artifacts:
         if not isinstance(artifact, dict) or artifact.get("verification") != "verified":
             continue
         artifact_path = artifact.get("path")
-        if not isinstance(artifact_path, str):
-            continue
-        at_commit = _git(repository, "cat-file", "-e", f"{pinned_commit}:{artifact_path}")
-        if not at_commit.ok:
-            qualifier = "not tracked" if (repository / artifact_path).exists() else "missing"
-            issues.append(
-                SourceAuditIssue(
-                    project_id,
-                    artifact_path,
-                    f"artifact is {qualifier} at the pinned commit",
-                )
-            )
-            continue
-        status = _git(
-            repository,
-            "status",
-            "--porcelain=v1",
-            "--untracked-files=all",
-            "--",
+        if isinstance(artifact_path, str):
+            yield artifact_path
+
+
+def _audit_artifact(
+    project_id: str,
+    repository: Path,
+    pinned_commit: Any,
+    artifact_path: str,
+) -> SourceAuditIssue | None:
+    at_commit = _git(repository, "cat-file", "-e", f"{pinned_commit}:{artifact_path}")
+    if not at_commit.ok:
+        qualifier = "not tracked" if (repository / artifact_path).exists() else "missing"
+        return SourceAuditIssue(
+            project_id,
             artifact_path,
+            f"artifact is {qualifier} at the pinned commit",
         )
-        if not status.ok:
-            issues.append(
-                SourceAuditIssue(project_id, artifact_path, "cannot inspect artifact state")
-            )
-        elif status.stdout:
-            issues.append(
-                SourceAuditIssue(project_id, artifact_path, "artifact has local modifications")
-            )
-    return issues
+    status = _git(
+        repository,
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all",
+        "--",
+        artifact_path,
+    )
+    if not status.ok:
+        return SourceAuditIssue(project_id, artifact_path, "cannot inspect artifact state")
+    if status.stdout:
+        return SourceAuditIssue(project_id, artifact_path, "artifact has local modifications")
+    return None
 
 
 @dataclass(frozen=True, slots=True)
