@@ -61,6 +61,20 @@ skip_covered = true
 
 [tool.mutmut]
 source_paths = ["career_radar/"]
+only_mutate = [
+  "career_radar/matching.py",
+  "career_radar/opportunity_store.py",
+  "career_radar/vacancy.py",
+]
 pytest_add_cli_args_test_selection = ["tests/"]
+also_copy = [
+  "scripts/",
+  "career_goals.yaml",
+  "career_profile.local.example.yaml",
+  "matching.yaml",
+  "projects.yaml",
+  "search_profiles.yaml",
+  "skills.yaml",
+]
 mutate_only_covered_lines = true
 use_setproctitle = false

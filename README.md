@@ -126,3 +126,8 @@ intentionally explicit because it is slower than the per-push checks:
 .venv/bin/mutmut run "career_radar.vacancy*"
 .venv/bin/mutmut run "career_radar.opportunity_store*"
 ```
+
+The mutation configuration copies the repository data and CLI scripts required by
+the isolated test workspace. It limits mutation generation to these three critical
+decision and persistence modules; pass a function-level mutant pattern for a faster
+focused run.
