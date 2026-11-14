@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from .matching import MatchReport
+from .text_output import escape_markdown
 
 
 def report_to_dict(report: MatchReport) -> dict[str, Any]:
@@ -61,7 +62,7 @@ def report_to_markdown(report: MatchReport) -> str:
     lines = [
         "# Vacancy Match",
         "",
-        f"**Role:** {_escape_markdown(report.vacancy.title)}",
+        f"**Role:** {escape_markdown(report.vacancy.title)}",
         f"**Recommendation:** {report.recommendation}",
         f"**Opportunity score:** {report.overall_score}%",
         f"**Confidence:** {report.confidence}%",
@@ -69,7 +70,7 @@ def report_to_markdown(report: MatchReport) -> str:
         "## Why",
         "",
     ]
-    lines.extend(f"- {_escape_markdown(reason)}." for reason in report.reasons)
+    lines.extend(f"- {escape_markdown(reason)}." for reason in report.reasons)
     lines.extend(
         [
             "",
@@ -82,8 +83,8 @@ def report_to_markdown(report: MatchReport) -> str:
     for dimension in report.dimensions:
         score = f"{dimension.score}%" if dimension.score is not None else "unknown"
         lines.append(
-            f"| {_escape_markdown(dimension.name)} | {score} | {dimension.weight} | "
-            f"{_escape_markdown(dimension.reason)} |"
+            f"| {escape_markdown(dimension.name)} | {score} | {dimension.weight} | "
+            f"{escape_markdown(dimension.reason)} |"
         )
 
     lines.extend(
@@ -97,11 +98,11 @@ def report_to_markdown(report: MatchReport) -> str:
     )
     if report.requirement_mappings:
         for mapping in report.requirement_mappings:
-            projects = _escape_markdown(", ".join(mapping.projects) or "none")
+            projects = escape_markdown(", ".join(mapping.projects) or "none")
             lines.append(
-                f"| {_escape_markdown(mapping.skill_name)} | "
-                f"{_escape_markdown(mapping.importance)} | "
-                f"{_escape_markdown(mapping.evidence_status)} | {projects} |"
+                f"| {escape_markdown(mapping.skill_name)} | "
+                f"{escape_markdown(mapping.importance)} | "
+                f"{escape_markdown(mapping.evidence_status)} | {projects} |"
             )
     else:
         lines.append("| none recognized | — | gap | none |")
@@ -115,16 +116,6 @@ def report_to_markdown(report: MatchReport) -> str:
     if report.vacancy.unmapped_requirement_lines:
         lines.extend(["", "## Unmapped requirement lines", ""])
         lines.extend(
-            f"- {_escape_markdown(line)}" for line in report.vacancy.unmapped_requirement_lines
+            f"- {escape_markdown(line)}" for line in report.vacancy.unmapped_requirement_lines
         )
     return "\n".join(lines) + "\n"
-
-
-def _escape_markdown(value: str) -> str:
-    safe_value = "".join(
-        character for character in value if ord(character) >= 32 and ord(character) != 127
-    )
-    escaped = safe_value.replace("\\", "\\\\")
-    for character in ("`", "*", "_", "{", "}", "[", "]", "(", ")", "#", "!", "|", "<", ">"):
-        escaped = escaped.replace(character, f"\\{character}")
-    return escaped

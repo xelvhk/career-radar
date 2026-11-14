@@ -17,6 +17,7 @@ from career_radar.search_profiles import (  # noqa: E402
     compile_search_queries,
     parse_search_profiles,
 )
+from career_radar.text_output import escape_markdown  # noqa: E402
 from career_radar.validation import load_yaml  # noqa: E402
 
 
@@ -75,26 +76,18 @@ def _to_markdown(queries: tuple[CompiledSearchQuery, ...]) -> str:
             lines.extend(
                 [
                     "",
-                    f"## {_escape_markdown(query.profile_name)}",
+                    f"## {escape_markdown(query.profile_name)}",
                     "",
                     f"Target role: `{query.target_role_id}`",
                     "",
                 ]
             )
-        skills = ", ".join(_escape_markdown(term) for term in query.skill_terms)
-        exclusions = ", ".join(_escape_markdown(term) for term in query.exclude_terms)
+        skills = ", ".join(escape_markdown(term) for term in query.skill_terms)
+        exclusions = ", ".join(escape_markdown(term) for term in query.exclude_terms)
         lines.append(
-            f"- **{_escape_markdown(query.title_phrase)}** — skills: {skills}; "
-            f"exclude: {exclusions}"
+            f"- **{escape_markdown(query.title_phrase)}** — skills: {skills}; exclude: {exclusions}"
         )
     return "\n".join(lines) + "\n"
-
-
-def _escape_markdown(value: str) -> str:
-    escaped = value.replace("\\", "\\\\")
-    for character in ("`", "*", "_", "[", "]", "<", ">", "|"):
-        escaped = escaped.replace(character, f"\\{character}")
-    return escaped
 
 
 if __name__ == "__main__":
